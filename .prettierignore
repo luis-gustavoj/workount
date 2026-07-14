@@ -1,0 +1,12 @@
+.next
+node_modules
+coverage
+playwright-report
+test-results
+package-lock.json
+
+# Prose and planning artifacts are hand-formatted. Prettier reflows them into noise.
+*.md
+docs/
+.scratch/
+design/
