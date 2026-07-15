@@ -69,5 +69,6 @@ export function buildSessionDraft(input: BuildSessionDraftInput): SessionDraft {
     workoutId: input.workoutId,
     startedAt: input.startedAt,
     exercises,
+    activeExerciseIndex: 0,
   };
 }

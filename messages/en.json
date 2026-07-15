@@ -128,5 +128,34 @@
     "bodyweight": "Bodyweight",
     "kettlebell": "Kettlebell",
     "other": "Other"
+  },
+  "WorkoutDetail": {
+    "startSession": "Start session",
+    "startSessionError": "Couldn't start the session. Check your connection and try again."
+  },
+  "Session": {
+    "loading": "Loading session…",
+    "emptyTitle": "No session in progress",
+    "emptyBody": "Start a workout to begin logging sets.",
+    "backToWorkouts": "Back to workouts",
+    "exerciseProgress": "Exercise {position} of {total}",
+    "setLabel": "Set {number}",
+    "warmupMarker": "W",
+    "lastTime": "Last time: {weight} × {reps}",
+    "lastTimeMultiple": "Last time: {sets}",
+    "lastTimeNone": "No last time yet",
+    "targetLabel": "{sets} × {repMin}–{repMax}",
+    "targetLabelFixed": "{sets} × {reps}",
+    "notesLabel": "Notes",
+    "weightLabel": "Weight (kg)",
+    "repsLabel": "Reps",
+    "warmupToggle": "Warmup",
+    "logSet": "Log set",
+    "markWarmup": "Mark as warmup",
+    "unmarkWarmup": "Unmark warmup",
+    "skipExercise": "Skip",
+    "previousExercise": "Previous exercise",
+    "nextExercise": "Next exercise",
+    "extraSet": "Extra set"
   }
 }

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { updateWorkout } from "@/app/(app)/programs/actions";
 import { AddExercise } from "@/app/(app)/programs/[id]/workouts/[workoutId]/add-exercise";
 import { ExerciseList } from "@/app/(app)/programs/[id]/workouts/[workoutId]/exercise-list";
+import { StartSessionButton } from "@/app/(app)/programs/[id]/workouts/[workoutId]/start-session-button";
 import { listExercises } from "@/lib/exercises/queries";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,8 @@ export default async function WorkoutDetailPage({
           </p>
         )}
       </div>
+
+      {workoutExercises.length > 0 && <StartSessionButton workoutId={workoutId} />}
 
       <section className="flex flex-col gap-3 border-t border-line pt-5">
         <h2 className="text-sm font-medium">{t("exercises")}</h2>

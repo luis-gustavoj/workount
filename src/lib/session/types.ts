@@ -61,6 +61,11 @@ export type SessionDraft = {
   workoutId: string;
   startedAt: string; // ISO 8601
   exercises: DraftExercise[];
+  // Which exercise the player is currently showing. Persisted like every
+  // other field here (ticket 012 acceptance: "Kill the browser tab entirely.
+  // Reopen /session. Everything is exactly where you left it ... the current
+  // exercise, the lot") — a component-local index would be lost on reload.
+  activeExerciseIndex: number;
 };
 
 // idb-keyval key the draft lives under (SPEC.md §4 / ticket 011).

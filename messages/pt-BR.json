@@ -128,5 +128,34 @@
     "bodyweight": "Peso corporal",
     "kettlebell": "Kettlebell",
     "other": "Outro"
+  },
+  "WorkoutDetail": {
+    "startSession": "Iniciar sessão",
+    "startSessionError": "Não foi possível iniciar a sessão. Verifique sua conexão e tente novamente."
+  },
+  "Session": {
+    "loading": "Carregando sessão…",
+    "emptyTitle": "Nenhuma sessão em andamento",
+    "emptyBody": "Inicie um treino para começar a registrar séries.",
+    "backToWorkouts": "Voltar aos treinos",
+    "exerciseProgress": "Exercício {position} de {total}",
+    "setLabel": "Série {number}",
+    "warmupMarker": "A",
+    "lastTime": "Última vez: {weight} × {reps}",
+    "lastTimeMultiple": "Última vez: {sets}",
+    "lastTimeNone": "Ainda sem histórico",
+    "targetLabel": "{sets} × {repMin}–{repMax}",
+    "targetLabelFixed": "{sets} × {reps}",
+    "notesLabel": "Notas",
+    "weightLabel": "Peso (kg)",
+    "repsLabel": "Repetições",
+    "warmupToggle": "Aquecimento",
+    "logSet": "Registrar série",
+    "markWarmup": "Marcar como aquecimento",
+    "unmarkWarmup": "Desmarcar aquecimento",
+    "skipExercise": "Pular",
+    "previousExercise": "Exercício anterior",
+    "nextExercise": "Próximo exercício",
+    "extraSet": "Série extra"
   }
 }
