@@ -78,8 +78,30 @@
     "createAnyway": "Criar mesmo assim",
     "cancel": "Cancelar",
     "create": "Criar",
-    "duplicateError": "Você já tem um exercício personalizado com este nome.",
-    "pickedNote": "Selecionado: {name}"
+    "duplicateError": "Você já tem um exercício personalizado com este nome."
+  },
+  "PrescriptionEditor": {
+    "addToWorkout": "Adicionar ao treino",
+    "cancel": "Cancelar",
+    "targetSetsLabel": "Séries",
+    "repRangeLabel": "Faixa de repetições",
+    "repMinLabel": "Repetições mínimas",
+    "repMaxLabel": "Repetições máximas",
+    "restSecondsLabel": "Descanso (segundos)",
+    "restSecondsInherited": "Vazio herda seu padrão de {seconds}s",
+    "notesLabel": "Notas",
+    "notesPlaceholder": "Pausa de 1s no peito.",
+    "supersetGroupLabel": "Superssérie",
+    "supersetGroupNone": "Nenhuma",
+    "supersetGroupOption": "Grupo {group}",
+    "supersetLonelyWarning": "O grupo {group} precisa de um segundo exercício para alternar.",
+    "repRangeError": "As repetições máximas devem ser maiores ou iguais às mínimas.",
+    "dragToReorder": "Arraste para reordenar",
+    "save": "Salvar",
+    "remove": "Remover",
+    "removeConfirm": "Remover este exercício do treino? As sessões realizadas a partir dele são mantidas.",
+    "invalidError": "Verifique os valores e tente novamente.",
+    "notFoundError": "Este exercício foi removido. Atualize a página e tente novamente."
   },
   "Locale": {
     "en": "English",

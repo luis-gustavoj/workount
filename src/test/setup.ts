@@ -18,3 +18,14 @@ if (!Element.prototype.releasePointerCapture) {
 if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
+
+// jsdom has no ResizeObserver, but @dnd-kit/dom (first used by the workout
+// and exercise list drag-reorder, tickets 007/009) constructs one at import
+// time — a no-op stub is enough since layout tests don't drive real drags.
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

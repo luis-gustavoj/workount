@@ -78,8 +78,30 @@
     "createAnyway": "Create anyway",
     "cancel": "Cancel",
     "create": "Create",
-    "duplicateError": "You already have a custom exercise with this name.",
-    "pickedNote": "Selected: {name}"
+    "duplicateError": "You already have a custom exercise with this name."
+  },
+  "PrescriptionEditor": {
+    "addToWorkout": "Add to workout",
+    "cancel": "Cancel",
+    "targetSetsLabel": "Sets",
+    "repRangeLabel": "Rep range",
+    "repMinLabel": "Minimum reps",
+    "repMaxLabel": "Maximum reps",
+    "restSecondsLabel": "Rest (seconds)",
+    "restSecondsInherited": "Empty inherits your default of {seconds}s",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Pause 1s at the chest.",
+    "supersetGroupLabel": "Superset",
+    "supersetGroupNone": "None",
+    "supersetGroupOption": "Group {group}",
+    "supersetLonelyWarning": "Group {group} needs a second exercise to alternate with.",
+    "repRangeError": "Rep max must be at least rep min.",
+    "dragToReorder": "Drag to reorder",
+    "save": "Save",
+    "remove": "Remove",
+    "removeConfirm": "Remove this exercise from the workout? Sessions performed from it are kept.",
+    "invalidError": "Check the values and try again.",
+    "notFoundError": "This exercise was removed. Refresh and try again."
   },
   "Locale": {
     "en": "English",

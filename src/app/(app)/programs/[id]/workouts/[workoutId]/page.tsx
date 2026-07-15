@@ -6,11 +6,14 @@ import { z } from "zod";
 
 import { updateWorkout } from "@/app/(app)/programs/actions";
 import { AddExercise } from "@/app/(app)/programs/[id]/workouts/[workoutId]/add-exercise";
+import { ExerciseList } from "@/app/(app)/programs/[id]/workouts/[workoutId]/exercise-list";
 import { listExercises } from "@/lib/exercises/queries";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DAY_OF_WEEK_KEYS, WORKOUT_NAME_MAX } from "@/lib/validation/workout";
+import { listWorkoutExercises } from "@/lib/workouts/queries";
+import { availableSupersetGroups } from "@/lib/workouts/superset";
 
 const paramsSchema = z.object({
   id: z.uuid(),
@@ -18,10 +21,10 @@ const paramsSchema = z.object({
 });
 
 /**
- * `/programs/[id]/workouts/[workoutId]` — the workout detail page (ticket
- * 007), plus the exercise picker (ticket 008). Attaching a picked exercise to
- * the workout as a full prescription (sets, rep range, rest, notes) is ticket
- * 009; for now this is the rename / reschedule form and the picker itself.
+ * `/programs/[id]/workouts/[workoutId]` — the workout builder: the workout
+ * detail page (ticket 007), the exercise picker (ticket 008), and the
+ * prescription editor (ticket 009) — sets, rep range, rest override, notes,
+ * and superset group per exercise, plus the rename / reschedule form.
  */
 export default async function WorkoutDetailPage({
   params,
@@ -39,22 +42,35 @@ export default async function WorkoutDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 
-  const [{ data: program }, { data: workout }, exercises] = await Promise.all([
-    supabase
-      .from("programs")
-      .select("id, name")
-      .eq("id", programId)
-      .maybeSingle(),
-    supabase
-      .from("workouts")
-      .select("id, name, day_of_week, position, program_id")
-      .eq("id", workoutId)
-      .eq("program_id", programId)
-      .maybeSingle(),
-    listExercises(supabase),
-  ]);
+  const [{ data: program }, { data: workout }, { data: profile }, exercises, workoutExercises] =
+    await Promise.all([
+      supabase
+        .from("programs")
+        .select("id, name")
+        .eq("id", programId)
+        .maybeSingle(),
+      supabase
+        .from("workouts")
+        .select("id, name, day_of_week, position, program_id")
+        .eq("id", workoutId)
+        .eq("program_id", programId)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("default_rest_seconds")
+        .eq("id", user.id)
+        .maybeSingle(),
+      listExercises(supabase),
+      listWorkoutExercises(supabase, workoutId),
+    ]);
 
   if (!program || !workout) notFound();
+
+  // profiles.default_rest_seconds — the value an empty rest override
+  // inherits (SPEC.md §2). (app)/layout.tsx guarantees the row exists; the
+  // fallback mirrors the column's own DB default (migration 0001).
+  const defaultRestSeconds = profile?.default_rest_seconds ?? 90;
+  const supersetGroupOptions = availableSupersetGroups(workoutExercises);
 
   return (
     <main className="mx-auto flex w-full max-w-[480px] flex-col gap-6 px-4 py-8">
@@ -78,7 +94,25 @@ export default async function WorkoutDetailPage({
 
       <section className="flex flex-col gap-3 border-t border-line pt-5">
         <h2 className="text-sm font-medium">{t("exercises")}</h2>
-        <AddExercise exercises={exercises} />
+
+        {workoutExercises.length > 0 ? (
+          <ExerciseList
+            items={workoutExercises}
+            workoutId={workoutId}
+            programId={programId}
+            defaultRestSeconds={defaultRestSeconds}
+          />
+        ) : (
+          <p className="text-ink-muted text-sm">{t("workoutExercisesEmpty")}</p>
+        )}
+
+        <AddExercise
+          exercises={exercises}
+          workoutId={workoutId}
+          programId={programId}
+          supersetGroupOptions={supersetGroupOptions}
+          defaultRestSeconds={defaultRestSeconds}
+        />
       </section>
 
       <section className="flex flex-col gap-3 border-t border-line pt-5">

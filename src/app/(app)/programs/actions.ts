@@ -14,6 +14,12 @@ import {
   reorderWorkoutsSchema,
   updateWorkoutSchema,
 } from "@/lib/validation/workout";
+import {
+  createWorkoutExerciseSchema,
+  deleteWorkoutExerciseSchema,
+  reorderWorkoutExercisesSchema,
+  updateWorkoutExerciseSchema,
+} from "@/lib/validation/workout-exercise";
 import { createClient } from "@/lib/supabase/server";
 
 // Server Actions for program CRUD and the "follow this program" flow (ticket
@@ -283,4 +289,193 @@ export async function reorderWorkouts(programId: string, ids: string[]) {
   }
 
   revalidatePath(`/programs/${validProgramId}`);
+}
+
+// Prescription CRUD within a workout (ticket 009): what a workout tells you
+// to do for one exercise — sets, rep range, rest override, notes, superset
+// group — on `workout_exercises`. The exercise itself is never edited here;
+// swapping it is a remove-and-re-add, not a field update.
+
+export type PrescriptionActionResult =
+  | { ok: true }
+  | { ok: false; error: "invalid" | "not_found" };
+
+/**
+ * INSERT can't fail closed the way an RLS-scoped UPDATE/DELETE does (see
+ * createWorkout above), so confirm the workout is the caller's own before
+ * inserting a prescription under it.
+ */
+async function requireWorkoutOwnership(workoutId: string, programId: string) {
+  const { supabase } = await requireUser();
+
+  const { data, error } = await supabase
+    .from("workouts")
+    .select("id")
+    .eq("id", workoutId)
+    .eq("program_id", programId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Workout not found");
+
+  return supabase;
+}
+
+/**
+ * Attach an exercise to a workout as a full prescription, appended to the end
+ * of its order. Called directly from the "add exercise" flow (not a `<form
+ * action>`) so the caller can reset its local picker state on success and
+ * show a typed, translated error otherwise — mirrors createCustomExercise
+ * (ticket 008).
+ */
+export async function createWorkoutExercise(
+  input: unknown,
+): Promise<PrescriptionActionResult> {
+  const parsed = createWorkoutExerciseSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  const {
+    workoutId,
+    programId,
+    exerciseId,
+    targetSets,
+    repMin,
+    repMax,
+    restSeconds,
+    notes,
+    supersetGroup,
+  } = parsed.data;
+
+  const supabase = await requireWorkoutOwnership(workoutId, programId);
+
+  const { data: maxRow } = await supabase
+    .from("workout_exercises")
+    .select("position")
+    .eq("workout_id", workoutId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const position = (maxRow?.position ?? -1) + 1;
+
+  const { error } = await supabase.from("workout_exercises").insert({
+    workout_id: workoutId,
+    exercise_id: exerciseId,
+    position,
+    target_sets: targetSets,
+    rep_min: repMin,
+    rep_max: repMax,
+    rest_seconds: restSeconds,
+    notes,
+    superset_group: supersetGroup,
+  });
+  if (error) throw error;
+
+  revalidatePath(`/programs/${programId}/workouts/${workoutId}`);
+  return { ok: true };
+}
+
+/**
+ * Edit an existing prescription's sets, rep range, rest, notes, or superset
+ * group. Like createWorkoutExercise, called directly rather than bound to a
+ * `<form action>` so a rep-range mistake (repMax < repMin) comes back as a
+ * typed error the row can show inline instead of an uncaught throw.
+ */
+export async function updateWorkoutExercise(
+  input: unknown,
+): Promise<PrescriptionActionResult> {
+  const parsed = updateWorkoutExerciseSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  const {
+    id,
+    workoutId,
+    programId,
+    targetSets,
+    repMin,
+    repMax,
+    restSeconds,
+    notes,
+    supersetGroup,
+  } = parsed.data;
+
+  const { supabase } = await requireUser();
+
+  const { data: updated, error } = await supabase
+    .from("workout_exercises")
+    .update({
+      target_sets: targetSets,
+      rep_min: repMin,
+      rep_max: repMax,
+      rest_seconds: restSeconds,
+      notes,
+      superset_group: supersetGroup,
+    })
+    .eq("id", id)
+    .eq("workout_id", workoutId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!updated) return { ok: false, error: "not_found" };
+
+  revalidatePath(`/programs/${programId}/workouts/${workoutId}`);
+  return { ok: true };
+}
+
+/**
+ * Remove an exercise from a workout. `session_sets.workout_exercise_id` is
+ * `ON DELETE SET NULL` (migration 0001, ADR-0002), so this never touches
+ * session history.
+ */
+export async function deleteWorkoutExercise(formData: FormData) {
+  const { id, workoutId, programId } = deleteWorkoutExerciseSchema.parse({
+    id: formData.get("id"),
+    workoutId: formData.get("workoutId"),
+    programId: formData.get("programId"),
+  });
+
+  const { supabase } = await requireUser();
+
+  const { data: deleted, error } = await supabase
+    .from("workout_exercises")
+    .delete()
+    .eq("id", id)
+    .eq("workout_id", workoutId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!deleted) throw new Error("Exercise not found");
+
+  revalidatePath(`/programs/${programId}/workouts/${workoutId}`);
+}
+
+/**
+ * Persist a drag-reorder of the exercise list as sequential `position`
+ * values. Mirrors reorderWorkouts — called directly from the client since a
+ * drag gesture has no submit event to hang a `<form action>` on.
+ */
+export async function reorderWorkoutExercises(
+  workoutId: string,
+  programId: string,
+  ids: string[],
+) {
+  const {
+    workoutId: validWorkoutId,
+    programId: validProgramId,
+    ids: validIds,
+  } = reorderWorkoutExercisesSchema.parse({ workoutId, programId, ids });
+
+  const { supabase } = await requireUser();
+
+  const updates = validIds.map((id, index) =>
+    supabase
+      .from("workout_exercises")
+      .update({ position: index })
+      .eq("id", id)
+      .eq("workout_id", validWorkoutId),
+  );
+
+  const results = await Promise.all(updates);
+  for (const { error } of results) {
+    if (error) throw error;
+  }
+
+  revalidatePath(`/programs/${validProgramId}/workouts/${validWorkoutId}`);
 }
