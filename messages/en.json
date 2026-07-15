@@ -60,6 +60,27 @@
     "friday": "Friday",
     "saturday": "Saturday"
   },
+  "ExercisePicker": {
+    "trigger": "Add exercise",
+    "title": "Add exercise",
+    "searchPlaceholder": "Search exercises",
+    "allMuscleGroups": "All muscle groups",
+    "custom": "Custom",
+    "noResults": "No exercises match your search.",
+    "createPrompt": "Can't find it? Create \"{query}\"",
+    "createTitle": "Create custom exercise",
+    "nameLabel": "Name",
+    "muscleGroupLabel": "Muscle group",
+    "muscleGroupPlaceholder": "Select a muscle group",
+    "equipmentLabel": "Equipment",
+    "equipmentPlaceholder": "Select equipment",
+    "didYouMean": "Did you mean one of these?",
+    "createAnyway": "Create anyway",
+    "cancel": "Cancel",
+    "create": "Create",
+    "duplicateError": "You already have a custom exercise with this name.",
+    "pickedNote": "Selected: {name}"
+  },
   "Locale": {
     "en": "English",
     "pt-BR": "Português (Brasil)"

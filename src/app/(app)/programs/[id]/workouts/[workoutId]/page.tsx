@@ -5,6 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { updateWorkout } from "@/app/(app)/programs/actions";
+import { AddExercise } from "@/app/(app)/programs/[id]/workouts/[workoutId]/add-exercise";
+import { listExercises } from "@/lib/exercises/queries";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +19,9 @@ const paramsSchema = z.object({
 
 /**
  * `/programs/[id]/workouts/[workoutId]` — the workout detail page (ticket
- * 007). The exercise list stays empty until ticket 009; for now this is just
- * the rename / reschedule form.
+ * 007), plus the exercise picker (ticket 008). Attaching a picked exercise to
+ * the workout as a full prescription (sets, rep range, rest, notes) is ticket
+ * 009; for now this is the rename / reschedule form and the picker itself.
  */
 export default async function WorkoutDetailPage({
   params,
@@ -36,7 +39,7 @@ export default async function WorkoutDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 
-  const [{ data: program }, { data: workout }] = await Promise.all([
+  const [{ data: program }, { data: workout }, exercises] = await Promise.all([
     supabase
       .from("programs")
       .select("id, name")
@@ -48,6 +51,7 @@ export default async function WorkoutDetailPage({
       .eq("id", workoutId)
       .eq("program_id", programId)
       .maybeSingle(),
+    listExercises(supabase),
   ]);
 
   if (!program || !workout) notFound();
@@ -74,9 +78,7 @@ export default async function WorkoutDetailPage({
 
       <section className="flex flex-col gap-3 border-t border-line pt-5">
         <h2 className="text-sm font-medium">{t("exercises")}</h2>
-        <p className="text-ink-muted text-sm">
-          {t("workoutExercisesEmpty")}
-        </p>
+        <AddExercise exercises={exercises} />
       </section>
 
       <section className="flex flex-col gap-3 border-t border-line pt-5">
