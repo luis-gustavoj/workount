@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:rls": "tsx scripts/test-rls.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
@@ -48,6 +49,7 @@
     "prettier": "^3.9.5",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }
