@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
  * in Supabase's allowed redirect URLs (supabase/config.toml locally).
  */
 export function GoogleSignInButton() {
+  const t = useTranslations("SignIn");
   const [pending, setPending] = useState(false);
 
   async function signIn() {
@@ -38,7 +40,7 @@ export function GoogleSignInButton() {
       onClick={signIn}
       disabled={pending}
     >
-      {pending ? "Redirecting…" : "Continue with Google"}
+      {pending ? t("redirecting") : t("continueWithGoogle")}
     </Button>
   );
 }

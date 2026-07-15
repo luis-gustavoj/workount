@@ -1,0 +1,45 @@
+{
+  "SignIn": {
+    "tagline": "Acompanhe seus programas de treino e registre suas sessões.",
+    "continueWithGoogle": "Continuar com o Google",
+    "redirecting": "Redirecionando…",
+    "error": "O login não foi concluído. Tente novamente.",
+    "passwordless": "O Google é a única forma de entrar. Nunca vemos nem armazenamos sua senha."
+  },
+  "Shell": {
+    "signOut": "Sair",
+    "signedIn": "Conectado",
+    "settings": "Configurações"
+  },
+  "Settings": {
+    "title": "Configurações",
+    "language": "Idioma",
+    "languageDescription": "O idioma em que o app é exibido."
+  },
+  "Locale": {
+    "en": "English",
+    "pt-BR": "Português (Brasil)"
+  },
+  "muscle_group": {
+    "chest": "Peito",
+    "back": "Costas",
+    "shoulders": "Ombros",
+    "quads": "Quadríceps",
+    "hamstrings": "Posteriores de coxa",
+    "glutes": "Glúteos",
+    "biceps": "Bíceps",
+    "triceps": "Tríceps",
+    "core": "Core",
+    "calves": "Panturrilhas",
+    "other": "Outro"
+  },
+  "equipment": {
+    "barbell": "Barra",
+    "dumbbell": "Halter",
+    "machine": "Máquina",
+    "cable": "Polia",
+    "bodyweight": "Peso corporal",
+    "kettlebell": "Kettlebell",
+    "other": "Outro"
+  }
+}

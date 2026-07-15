@@ -1,4 +1,8 @@
+import { Settings } from "lucide-react";
+import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { signOut } from "@/lib/auth/actions";
 import { profileFromUser } from "@/lib/auth/profile";
@@ -19,6 +23,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("Shell");
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,7 +43,9 @@ export default async function AppLayout({
   let displayName = profile?.display_name ?? null;
   let avatarUrl = profile?.avatar_url ?? null;
   if (!profile) {
-    const seed = profileFromUser(user);
+    // Seed locale from Accept-Language on this fallback creation path too, so a
+    // Portuguese browser doesn't get an English profile when the trigger missed.
+    const seed = profileFromUser(user, (await headers()).get("accept-language"));
     // ignoreDuplicates so a race with the trigger (or a second tab) is a no-op
     // rather than a unique-violation. RLS permits this insert: the profiles
     // policy allows `id = auth.uid()`, and we are that user.
@@ -49,7 +56,7 @@ export default async function AppLayout({
     avatarUrl = seed.avatar_url ?? null;
   }
 
-  const label = displayName ?? user.email ?? "Signed in";
+  const label = displayName ?? user.email ?? t("signedIn");
 
   return (
     <div className="flex min-h-full flex-col">
@@ -57,8 +64,9 @@ export default async function AppLayout({
         <div className="mx-auto flex w-full max-w-[480px] items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- a single
-              // remote Google avatar; not worth a next/image remotePatterns entry.
+              // A single remote Google avatar; not worth a next/image
+              // remotePatterns entry.
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={avatarUrl}
                 alt=""
@@ -84,11 +92,18 @@ export default async function AppLayout({
             </span>
           </div>
 
-          <form action={signOut}>
-            <Button type="submit" variant="ghost" size="sm">
-              Sign out
+          <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/settings" aria-label={t("settings")}>
+                <Settings className="size-4" />
+              </Link>
             </Button>
-          </form>
+            <form action={signOut}>
+              <Button type="submit" variant="ghost" size="sm">
+                {t("signOut")}
+              </Button>
+            </form>
+          </div>
         </div>
       </header>
 

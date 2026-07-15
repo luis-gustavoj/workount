@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 
+import { localeFromAcceptLanguage } from "@/lib/i18n/locales";
 import type { TablesInsert } from "@/lib/types/database";
 
 /**
@@ -18,9 +19,17 @@ import type { TablesInsert } from "@/lib/types/database";
  * `avatar_url` (or `picture`). Any may be absent — `display_name` and
  * `avatar_url` are both nullable. `default_rest_seconds` is deliberately left
  * off the payload so the column default of 90 applies (acceptance criterion).
+ *
+ * `locale` (ADR-0005 / ticket 022) is seeded from the request's `Accept-Language`
+ * so a Portuguese-browser user gets a Portuguese profile from its very first
+ * render. This is the self-heal counterpart to the OAuth callback's seed: the
+ * `handle_new_user` trigger cannot read an HTTP header, so the header-derived
+ * locale is applied wherever the app itself creates the row. Absent a header we
+ * fall back to `'en'`, matching the column default.
  */
 export function profileFromUser(
   user: Pick<User, "id" | "user_metadata">,
+  acceptLanguage?: string | null,
 ): TablesInsert<"profiles"> {
   const meta = user.user_metadata ?? {};
 
@@ -31,5 +40,6 @@ export function profileFromUser(
     id: user.id,
     display_name: str(meta.full_name) ?? str(meta.name),
     avatar_url: str(meta.avatar_url) ?? str(meta.picture),
+    locale: localeFromAcceptLanguage(acceptLanguage),
   };
 }

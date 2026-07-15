@@ -1,6 +1,16 @@
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+import {
+  asLocale,
+  localeFromAcceptLanguage,
+  LOCALE_COOKIE,
+  LOCALE_COOKIE_OPTIONS,
+  shouldSeedLocale,
+  type Locale,
+} from "@/lib/i18n/locales";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/types/database";
 
 /**
  * The OAuth callback. Google redirects here with a `code`; we exchange it for a
@@ -12,6 +22,35 @@ import { createClient } from "@/lib/supabase/server";
  * This route must stay reachable while signed out — it is allowlisted under
  * `/auth` in isPublicPath.
  */
+
+/**
+ * Resolve the locale to render this user in, and keep `profiles.locale` honest
+ * (ADR-0005 / ticket 022). On the *first* sign-in the trigger has written the
+ * `'en'` column default — it can't read `Accept-Language` — so we correct it
+ * here, where the header exists. On later sign-ins we read the stored value
+ * (never overwriting a deliberate choice), falling back to the header only if
+ * the row is somehow absent. Returned so the caller can mirror it into the
+ * cookie the render path reads.
+ */
+async function resolveSignInLocale(
+  supabase: SupabaseClient<Database>,
+  user: User,
+  acceptLanguage: string | null,
+): Promise<Locale> {
+  if (shouldSeedLocale(user, Date.now())) {
+    const locale = localeFromAcceptLanguage(acceptLanguage);
+    await supabase.from("profiles").update({ locale }).eq("id", user.id);
+    return locale;
+  }
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("locale")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return asLocale(data?.locale) ?? localeFromAcceptLanguage(acceptLanguage);
+}
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -35,10 +74,25 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     return NextResponse.redirect(`${base}/sign-in?error=exchange`);
   }
 
-  return NextResponse.redirect(`${base}/`);
+  const response = NextResponse.redirect(`${base}/`);
+
+  // Seed/read the locale and mirror it into the cookie the root layout resolves
+  // from, so the very first authenticated render is already in the right
+  // language. The session cookies were just written by exchangeCodeForSession,
+  // so this profiles write runs authenticated and RLS-clean (id = auth.uid()).
+  if (data.user) {
+    const locale = await resolveSignInLocale(
+      supabase,
+      data.user,
+      request.headers.get("accept-language"),
+    );
+    response.cookies.set(LOCALE_COOKIE, locale, LOCALE_COOKIE_OPTIONS);
+  }
+
+  return response;
 }

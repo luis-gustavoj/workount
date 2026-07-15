@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,15 +19,14 @@ export default async function SignInPage({
   } = await supabase.auth.getUser();
   if (user) redirect("/");
 
+  const t = await getTranslations("SignIn");
   const { error } = await searchParams;
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-[400px] flex-col justify-center gap-10 px-6 py-16">
       <div className="flex flex-col gap-2">
         <h1 className="text-[1.75rem] leading-tight font-semibold">Workount</h1>
-        <p className="text-ink-muted text-sm">
-          Track your training programs and log your sessions.
-        </p>
+        <p className="text-ink-muted text-sm">{t("tagline")}</p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -37,12 +37,10 @@ export default async function SignInPage({
           // yet (ticket 005 prerequisite), which no amount of app code can fix —
           // so the copy points at retrying rather than implying a bug.
           <p role="alert" className="text-danger text-sm">
-            Sign-in didn&apos;t complete. Please try again.
+            {t("error")}
           </p>
         ) : null}
-        <p className="text-ink-faint text-center text-xs">
-          Google is the only way in. We never see or store a password.
-        </p>
+        <p className="text-ink-faint text-center text-xs">{t("passwordless")}</p>
       </div>
     </main>
   );

@@ -75,6 +75,17 @@ describe("profileFromUser", () => {
     expect(profileFromUser(user({})).default_rest_seconds).toBeUndefined();
   });
 
+  it("seeds locale from Accept-Language (pt* → pt-BR)", () => {
+    // ADR-0005: the self-heal path creates the profile, so it must apply the
+    // header-derived locale the SQL trigger cannot see.
+    expect(profileFromUser(user({}), "pt-BR,en;q=0.8").locale).toBe("pt-BR");
+    expect(profileFromUser(user({}), "en-US").locale).toBe("en");
+  });
+
+  it("defaults locale to en when no Accept-Language is supplied", () => {
+    expect(profileFromUser(user({})).locale).toBe("en");
+  });
+
   it("tolerates missing user_metadata", () => {
     // Supabase types user_metadata as always-present, but a defensive caller may
     // hand us undefined; deriving an id-only row must not throw.

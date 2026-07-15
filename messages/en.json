@@ -1,0 +1,45 @@
+{
+  "SignIn": {
+    "tagline": "Track your training programs and log your sessions.",
+    "continueWithGoogle": "Continue with Google",
+    "redirecting": "Redirecting…",
+    "error": "Sign-in didn’t complete. Please try again.",
+    "passwordless": "Google is the only way in. We never see or store a password."
+  },
+  "Shell": {
+    "signOut": "Sign out",
+    "signedIn": "Signed in",
+    "settings": "Settings"
+  },
+  "Settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageDescription": "The language the app is displayed in."
+  },
+  "Locale": {
+    "en": "English",
+    "pt-BR": "Português (Brasil)"
+  },
+  "muscle_group": {
+    "chest": "Chest",
+    "back": "Back",
+    "shoulders": "Shoulders",
+    "quads": "Quads",
+    "hamstrings": "Hamstrings",
+    "glutes": "Glutes",
+    "biceps": "Biceps",
+    "triceps": "Triceps",
+    "core": "Core",
+    "calves": "Calves",
+    "other": "Other"
+  },
+  "equipment": {
+    "barbell": "Barbell",
+    "dumbbell": "Dumbbell",
+    "machine": "Machine",
+    "cable": "Cable",
+    "bodyweight": "Bodyweight",
+    "kettlebell": "Kettlebell",
+    "other": "Other"
+  }
+}
