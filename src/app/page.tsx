@@ -1,65 +1,60 @@
-import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+// Temporary design-system smoke page: proves the DESIGN.md ramp and the azure
+// signal render. Replaced by the real home screen in ticket 015.
+const RAMP = [
+  "bg-bg",
+  "bg-surface",
+  "bg-raised",
+  "bg-line",
+  "bg-ink-faint",
+  "bg-ink-muted",
+  "bg-ink",
+] as const;
 
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex w-full max-w-3xl flex-1 flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl leading-10 font-semibold tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="mx-auto flex w-full max-w-[480px] flex-col gap-8 px-4 py-12">
+      <div>
+        <h1 className="text-[1.375rem] leading-tight font-semibold">Workount</h1>
+        <p className="text-ink-muted mt-1 text-sm">
+          Design system — azure signal on a neutral chassis.
+        </p>
+      </div>
+
+      <section className="flex flex-col gap-3">
+        <span className="text-ink-faint text-[0.6875rem] font-medium tracking-[0.06em] uppercase">
+          Neutral ramp
+        </span>
+        <div className="border-line flex overflow-hidden rounded-md border">
+          {RAMP.map((c) => (
+            <div key={c} className={`h-12 flex-1 ${c}`} />
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] md:w-[158px] dark:hover:bg-[#ccc]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] md:w-[158px] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <span className="text-ink-faint text-[0.6875rem] font-medium tracking-[0.06em] uppercase">
+          Signal — live only
+        </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button>Start workout</Button>
+          <span className="text-signal font-mono text-[2.25rem] font-semibold tabular-nums">
+            1:30
+          </span>
+          <Badge className="bg-signal text-[oklch(0.13_0_0)]">NEW PR</Badge>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="border-line flex flex-col gap-2 border-t pt-4">
+        <span className="text-signal font-mono text-sm tabular-nums">
+          SET 3 OF 4 · 80 × 8
+        </span>
+        <span className="text-ink-faint font-mono text-sm tabular-nums">
+          w · 40 × 10 (warmup, does not count)
+        </span>
+      </section>
+    </main>
   );
 }

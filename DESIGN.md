@@ -6,9 +6,11 @@ The visual system for Workount. Read [PRODUCT.md](PRODUCT.md) for the strategy t
 
 **An instrument chassis with one live signal.**
 
-The surface is achromatic — chroma exactly `0` at every step of the neutral ramp, in both themes. No warm tint, no cool tint, no "subtle" hue in the greys. This is deliberate and it is the whole idea: because the chassis carries *no* color, the single rose signal is the only chromatic thing on screen, and the eye finds it instantly across a gym, at arm's length, at a glance between sets.
+The surface is achromatic — chroma exactly `0` at every step of the neutral ramp, in both themes. No warm tint, no cool tint, no "subtle" hue in the greys. This is deliberate and it is the whole idea: because the chassis carries *no* color, the single azure signal is the only chromatic thing on screen, and the eye finds it instantly across a gym, at arm's length, at a glance between sets.
 
 Spending color anywhere else devalues it. The signal marks exactly three things — **the set you are on, the timer that is running, and a record that was just broken** — and nothing else in the app is ever allowed to use it.
+
+The signal is azure, not blue-as-in-dashboard. The hue (245) is deliberately cyan-leaning and the chassis around it is dead neutral, so it reads as an instrument indicator lamp rather than a SaaS accent — the anti-reference PRODUCT.md rules out is *purple-gradient blue on tinted cards*, which this is the opposite of. Azure at hue 245 also sits as far from that reflex as a blue can while staying unambiguously blue.
 
 Both themes are designed, not derived. Dark is the default and the one tuned first (a garage at 6am, the phone the brightest object in the room). Light is a real second design for glare — pure white, maximum ink, not an inverted dark theme.
 
@@ -27,7 +29,7 @@ OKLCH throughout. Every pair below was checked numerically against WCAG 2.2; the
 | `ink` | `oklch(0.970 0 0)` | `#f5f5f5` | Readouts and primary text. **18.4:1** |
 | `ink-muted` | `oklch(0.730 0 0)` | `#a8a8a8` | Labels, units, secondary text. **8.4:1** |
 | `ink-faint` | `oklch(0.600 0 0)` | `#808080` | Completed/settled rows, disabled. **5.1:1** |
-| `signal` | `oklch(0.720 0.17 343)` | `#eb74c0` | Live only. Active set, running timer, new PR. **7.5:1** |
+| `signal` | `oklch(0.696 0.17 245)` | `#17a5fe` | Live only. Active set, running timer, new PR. **7.5:1** |
 | `danger` | `oklch(0.680 0.19 27)` | `#f75e54` | Commit failure, discard. **6.4:1** |
 | `warn` | `oklch(0.800 0.14 80)` | `#edb345` | Stale draft, unsaved. **10.6:1** |
 | `ok` | `oklch(0.780 0.15 150)` | `#67d283` | Committed. Used once, at finish. **10.6:1** |
@@ -43,7 +45,7 @@ OKLCH throughout. Every pair below was checked numerically against WCAG 2.2; the
 | `ink` | `oklch(0.180 0 0)` | `#121212` | **18.8:1** |
 | `ink-muted` | `oklch(0.460 0 0)` | `#585858` | **7.1:1** |
 | `ink-faint` | `oklch(0.580 0 0)` | `#7a7a7a` | **4.3:1** — large text and UI only, never body. |
-| `signal` | `oklch(0.550 0.21 343)` | `#bd2691` | **5.5:1**, and 5.5:1 for white text on the fill. |
+| `signal` | `oklch(0.520 0.132 245)` | `#006eaf` | **5.5:1**, and 5.5:1 for white text on the fill. |
 | `danger` | `oklch(0.520 0.21 27)` | `#c50516` | **6.2:1** |
 | `warn` | `oklch(0.550 0.14 80)` | `#9b6500` | **4.9:1** |
 | `ok` | `oklch(0.500 0.13 150)` | `#137738` | **5.7:1** |
