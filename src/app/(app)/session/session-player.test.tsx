@@ -5,6 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const idbStore = new Map<string, unknown>();
 
+vi.mock("@/lib/session/notify", () => ({
+  requestRestNotificationPermission: vi.fn(),
+  notifyRestComplete: vi.fn(),
+}));
+
 vi.mock("idb-keyval", () => ({
   get: vi.fn((key: string) => Promise.resolve(idbStore.get(key))),
   set: vi.fn((key: string, value: unknown) => {
@@ -57,6 +62,9 @@ function draft(overrides: Partial<SessionDraft> = {}): SessionDraft {
     startedAt: "2026-07-15T12:00:00.000Z",
     exercises: [exercise()],
     activeExerciseIndex: 0,
+    restEndsAt: null,
+    restStartedAt: null,
+    restNotifiedAt: null,
     ...overrides,
   };
 }
@@ -260,5 +268,42 @@ describe("SessionPlayer", () => {
 
     await user.click(screen.getByRole("button", { name: "Previous exercise" }));
     expect(await screen.findByText("Squat")).toBeInTheDocument();
+  });
+
+  it("auto-starts the rest timer when a set is logged, and it stays visible after navigating to another exercise", async () => {
+    const user = userEvent.setup();
+    idbStore.set(
+      ACTIVE_DRAFT_KEY,
+      draft({
+        exercises: [
+          exercise({ workoutExerciseId: "we-1", exerciseName: "Squat", restSeconds: 90 }),
+          exercise({ workoutExerciseId: "we-2", exerciseName: "Leg Press", restSeconds: 60 }),
+        ],
+      }),
+    );
+    renderPlayer();
+
+    await screen.findByText("Squat");
+    expect(screen.queryByText("Rest")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Log set" }));
+    expect(await screen.findByText("Rest")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Skip" }));
+    expect(await screen.findByText("Leg Press")).toBeInTheDocument();
+    expect(screen.getByText("Rest")).toBeInTheDocument();
+  });
+
+  it("ends the rest timer via the done-resting control", async () => {
+    const user = userEvent.setup();
+    idbStore.set(ACTIVE_DRAFT_KEY, draft());
+    renderPlayer();
+
+    await screen.findByText("Barbell Bench Press");
+    await user.click(screen.getByRole("button", { name: "Log set" }));
+    await screen.findByText("Rest");
+
+    await user.click(screen.getByRole("button", { name: "Done resting" }));
+    expect(screen.queryByText("Rest")).not.toBeInTheDocument();
   });
 });

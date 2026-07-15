@@ -156,6 +156,13 @@
     "skipExercise": "Skip",
     "previousExercise": "Previous exercise",
     "nextExercise": "Next exercise",
-    "extraSet": "Extra set"
+    "extraSet": "Extra set",
+    "restLabel": "Rest",
+    "restCompleteLabel": "Rest complete",
+    "restDecrease": "-15s",
+    "restIncrease": "+15s",
+    "doneResting": "Done resting",
+    "restNotificationTitle": "Rest complete",
+    "restNotificationBody": "Time for your next set."
   }
 }

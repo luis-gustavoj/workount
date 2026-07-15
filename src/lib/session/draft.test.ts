@@ -62,6 +62,21 @@ describe("buildSessionDraft", () => {
     expect(draft.startedAt).toBe("2026-07-15T12:00:00.000Z");
   });
 
+  it("starts with no rest timer running (ticket 013)", () => {
+    const draft = buildSessionDraft({
+      sessionId: "s-1",
+      programId: "p-1",
+      workoutId: "w-1",
+      startedAt: "2026-07-15T12:00:00.000Z",
+      prescriptions: [],
+      defaultRestSeconds: 90,
+      lastPerformanceRows: [],
+    });
+    expect(draft.restEndsAt).toBeNull();
+    expect(draft.restStartedAt).toBeNull();
+    expect(draft.restNotifiedAt).toBeNull();
+  });
+
   it("resolves an explicit rest_seconds as-is, ignoring the profile default", () => {
     const draft = buildSessionDraft({
       sessionId: "s-1",

@@ -70,5 +70,8 @@ export function buildSessionDraft(input: BuildSessionDraftInput): SessionDraft {
     startedAt: input.startedAt,
     exercises,
     activeExerciseIndex: 0,
+    restEndsAt: null,
+    restStartedAt: null,
+    restNotifiedAt: null,
   };
 }

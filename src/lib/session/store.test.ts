@@ -49,6 +49,9 @@ function draft(overrides: Partial<SessionDraft> = {}): SessionDraft {
     startedAt: "2026-07-15T12:00:00.000Z",
     exercises: [exercise()],
     activeExerciseIndex: 0,
+    restEndsAt: null,
+    restStartedAt: null,
+    restNotifiedAt: null,
     ...overrides,
   };
 }
@@ -91,6 +94,24 @@ describe("hydrate", () => {
     idbStore.set(ACTIVE_DRAFT_KEY, draft({ activeExerciseIndex: -3 }));
     await useSessionStore.getState().hydrate();
     expect(useSessionStore.getState().draft!.activeExerciseIndex).toBe(0);
+  });
+
+  it("normalizes missing rest-timer fields (a draft persisted before ticket 013) to null instead of undefined", async () => {
+    const legacyDraft = draft();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (legacyDraft as any).restEndsAt;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (legacyDraft as any).restStartedAt;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (legacyDraft as any).restNotifiedAt;
+    idbStore.set(ACTIVE_DRAFT_KEY, legacyDraft);
+
+    await useSessionStore.getState().hydrate();
+
+    const hydrated = useSessionStore.getState().draft!;
+    expect(hydrated.restEndsAt).toBeNull();
+    expect(hydrated.restStartedAt).toBeNull();
+    expect(hydrated.restNotifiedAt).toBeNull();
   });
 });
 
@@ -155,6 +176,140 @@ describe("logSet", () => {
     useSessionStore.setState({ draft: draft() });
     await useSessionStore.getState().logSet("does-not-exist", { weight: 1, reps: 1, isWarmup: false });
     expect(useSessionStore.getState().draft!.exercises[0].sets).toEqual([]);
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+
+  it("auto-starts the rest timer from the logged exercise's effective restSeconds (ticket 013)", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    useSessionStore.setState({
+      draft: draft({ exercises: [exercise({ restSeconds: 120 })] }),
+    });
+
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+
+    expect(useSessionStore.getState().draft!.restEndsAt).toBe(1_000_000 + 120_000);
+    vi.useRealTimers();
+  });
+
+  it("restarts the rest timer on every logged set, including while a previous rest was still counting", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    useSessionStore.setState({ draft: draft({ exercises: [exercise({ restSeconds: 90 })] }) });
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+
+    vi.setSystemTime(1_050_000);
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+
+    expect(useSessionStore.getState().draft!.restEndsAt).toBe(1_050_000 + 90_000);
+    vi.useRealTimers();
+  });
+
+  it("sets restStartedAt to the moment of logging and resets restNotifiedAt, so the new rest can notify again", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    useSessionStore.setState({
+      draft: draft({
+        exercises: [exercise({ restSeconds: 90 })],
+        restStartedAt: 500_000,
+        restNotifiedAt: 500_000,
+      }),
+    });
+
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+
+    expect(useSessionStore.getState().draft!.restStartedAt).toBe(1_000_000);
+    expect(useSessionStore.getState().draft!.restNotifiedAt).toBeNull();
+    vi.useRealTimers();
+  });
+});
+
+describe("adjustRest", () => {
+  it("adjusts restEndsAt by the given delta and persists", async () => {
+    useSessionStore.setState({ draft: draft({ restEndsAt: 1_000_000, restStartedAt: 910_000 }) });
+
+    await useSessionStore.getState().adjustRest(15_000);
+
+    expect(useSessionStore.getState().draft!.restEndsAt).toBe(1_015_000);
+    expect(idbSet).toHaveBeenCalledWith(
+      ACTIVE_DRAFT_KEY,
+      expect.objectContaining({ restEndsAt: 1_015_000 }),
+    );
+  });
+
+  it("subtracts for a negative delta (-15s button)", async () => {
+    useSessionStore.setState({ draft: draft({ restEndsAt: 1_000_000 }) });
+    await useSessionStore.getState().adjustRest(-15_000);
+    expect(useSessionStore.getState().draft!.restEndsAt).toBe(985_000);
+  });
+
+  it("leaves restStartedAt and restNotifiedAt untouched — a ±15s tap during overtime must not look like a fresh rest", async () => {
+    useSessionStore.setState({
+      draft: draft({ restEndsAt: 1_000_000, restStartedAt: 910_000, restNotifiedAt: 910_000 }),
+    });
+
+    await useSessionStore.getState().adjustRest(15_000);
+
+    expect(useSessionStore.getState().draft!.restStartedAt).toBe(910_000);
+    expect(useSessionStore.getState().draft!.restNotifiedAt).toBe(910_000);
+  });
+
+  it("is a no-op when no rest timer is running", async () => {
+    useSessionStore.setState({ draft: draft({ restEndsAt: null }) });
+    await useSessionStore.getState().adjustRest(15_000);
+    expect(useSessionStore.getState().draft!.restEndsAt).toBeNull();
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op when hydration hasn't produced a draft yet", async () => {
+    await useSessionStore.getState().adjustRest(15_000);
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+});
+
+describe("endRest", () => {
+  it("clears restEndsAt, restStartedAt, and restNotifiedAt, and persists", async () => {
+    useSessionStore.setState({
+      draft: draft({ restEndsAt: 1_000_000, restStartedAt: 910_000, restNotifiedAt: 910_000 }),
+    });
+
+    await useSessionStore.getState().endRest();
+
+    const draftAfter = useSessionStore.getState().draft!;
+    expect(draftAfter.restEndsAt).toBeNull();
+    expect(draftAfter.restStartedAt).toBeNull();
+    expect(draftAfter.restNotifiedAt).toBeNull();
+    expect(idbSet).toHaveBeenCalledWith(ACTIVE_DRAFT_KEY, expect.objectContaining({ restEndsAt: null }));
+  });
+
+  it("is a no-op when hydration hasn't produced a draft yet", async () => {
+    await useSessionStore.getState().endRest();
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+});
+
+describe("markRestNotified", () => {
+  it("records restStartedAt as the notified point and persists", async () => {
+    useSessionStore.setState({ draft: draft({ restEndsAt: 1_000_000, restStartedAt: 910_000 }) });
+
+    await useSessionStore.getState().markRestNotified();
+
+    expect(useSessionStore.getState().draft!.restNotifiedAt).toBe(910_000);
+    expect(idbSet).toHaveBeenCalledWith(
+      ACTIVE_DRAFT_KEY,
+      expect.objectContaining({ restNotifiedAt: 910_000 }),
+    );
+  });
+
+  it("is a no-op when no rest has started", async () => {
+    useSessionStore.setState({ draft: draft({ restStartedAt: null }) });
+    await useSessionStore.getState().markRestNotified();
+    expect(useSessionStore.getState().draft!.restNotifiedAt).toBeNull();
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op when hydration hasn't produced a draft yet", async () => {
+    await useSessionStore.getState().markRestNotified();
     expect(idbSet).not.toHaveBeenCalled();
   });
 });

@@ -66,6 +66,31 @@ export type SessionDraft = {
   // Reopen /session. Everything is exactly where you left it ... the current
   // exercise, the lot") — a component-local index would be lost on reload.
   activeExerciseIndex: number;
+  // The rest timer (ticket 013, CONTEXT.md), as timestamps (epoch ms) —
+  // never a decrementing counter, which drifts or freezes exactly when the
+  // phone locks. All three are `null` together when no rest is running.
+  // Fields at the draft level, not per-exercise: only one rest timer runs at
+  // a time, and it must stay visible regardless of which exercise the player
+  // is currently showing (and, for a superset, that exercise can differ from
+  // the one the rest actually started for). Past `restEndsAt`, the timer
+  // keeps counting up as overtime rather than clamping to zero, until the
+  // user ends it or logs the next set.
+  restEndsAt: number | null;
+  // When the current rest started — fixed for the life of one rest cycle,
+  // unlike `restEndsAt` (±15s moves it). Two things need this fixed point:
+  // the ring's total duration (`restEndsAt - restStartedAt`, exact and
+  // reload-safe, instead of re-reading whatever exercise happens to be on
+  // screen — that reading can be a superset peer with a different rest), and
+  // the "already notified" check below (keyed on this so a ±15s tap during
+  // overtime — which only moves `restEndsAt` — can't look like a fresh rest
+  // and re-fire the alert).
+  restStartedAt: number | null;
+  // The `restStartedAt` value the zero-crossing vibrate/notification has
+  // already fired for, or `null` if it hasn't yet this rest. Persisted
+  // (rather than component-local state) so reopening the app while already
+  // in overtime doesn't re-fire the alert — ticket 013's "kill the browser
+  // mid-rest and reopen" acceptance applies here too.
+  restNotifiedAt: number | null;
 };
 
 // idb-keyval key the draft lives under (SPEC.md §4 / ticket 011).

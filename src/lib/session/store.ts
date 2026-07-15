@@ -2,6 +2,7 @@ import { get as idbGet, set as idbSet } from "idb-keyval";
 import { create } from "zustand";
 
 import { nextExerciseIndexAfterLogging } from "./player";
+import { restEndsAtFor } from "./rest";
 import { ACTIVE_DRAFT_KEY, SESSION_DRAFT_VERSION, type PerformedSet, type SessionDraft } from "./types";
 
 export type LogSetInput = {
@@ -29,10 +30,26 @@ type SessionStore = {
   /** Flips a set already logged between warmup and working, in place. */
   toggleWarmup: (workoutExerciseId: string, setNumber: number) => Promise<void>;
   goToExercise: (index: number) => Promise<void>;
+  /** ±15s buttons (ticket 013). No-op while no rest timer is running. */
+  adjustRest: (deltaMs: number) => Promise<void>;
+  /** Ends rest early or dismisses overtime — explicit "done resting". */
+  endRest: () => Promise<void>;
+  /** Records that the zero-crossing vibrate/notification has fired for the current rest, so a reload mid-overtime doesn't re-fire it. */
+  markRestNotified: () => Promise<void>;
 };
 
 async function persist(draft: SessionDraft): Promise<void> {
   await idbSet(ACTIVE_DRAFT_KEY, draft);
+}
+
+/**
+ * Every action here does the same two things in the same order — update the
+ * in-memory draft, then write it through to IndexedDB — so it's centralized
+ * once rather than repeated per action (5 call sites before this existed).
+ */
+async function commit(set: (partial: Partial<SessionStore>) => void, nextDraft: SessionDraft): Promise<void> {
+  set({ draft: nextDraft });
+  await persist(nextDraft);
 }
 
 function mapExercise(
@@ -67,7 +84,17 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     // the player treat an in-progress draft as if no session existed.
     const maxIndex = Math.max(stored.exercises.length - 1, 0);
     const activeExerciseIndex = Math.min(Math.max(stored.activeExerciseIndex, 0), maxIndex);
-    set({ draft: { ...stored, activeExerciseIndex }, status: "ready" });
+    // The rest-timer fields (ticket 013) postdate some already-persisted
+    // drafts — a draft written before they existed has them `undefined`,
+    // not `null`; normalize so the rest of the app only ever sees the
+    // documented states.
+    const restEndsAt = stored.restEndsAt ?? null;
+    const restStartedAt = stored.restStartedAt ?? null;
+    const restNotifiedAt = stored.restNotifiedAt ?? null;
+    set({
+      draft: { ...stored, activeExerciseIndex, restEndsAt, restStartedAt, restNotifiedAt },
+      status: "ready",
+    });
   },
 
   logSet: async (workoutExerciseId, input) => {
@@ -88,10 +115,24 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     if (exerciseIndex === -1) return;
 
     const activeExerciseIndex = nextExerciseIndexAfterLogging(withNewSet.exercises, exerciseIndex);
-    const nextDraft: SessionDraft = { ...withNewSet, activeExerciseIndex };
+    // Auto-starts the rest timer (ticket 013), from the exercise the set was
+    // just logged on — not whichever exercise the player advances to next,
+    // since a superset's peer can have a different restSeconds. Restarts it
+    // even if a previous rest was still counting (or in overtime): logging a
+    // set always means "rest starts now." `restStartedAt` is the fixed
+    // anchor a ±15s adjustment won't move; `restNotifiedAt` resets so the
+    // new rest's zero-crossing can fire its own alert.
+    const now = Date.now();
+    const restEndsAt = restEndsAtFor(withNewSet.exercises[exerciseIndex].restSeconds, now);
+    const nextDraft: SessionDraft = {
+      ...withNewSet,
+      activeExerciseIndex,
+      restEndsAt,
+      restStartedAt: now,
+      restNotifiedAt: null,
+    };
 
-    set({ draft: nextDraft });
-    await persist(nextDraft);
+    await commit(set, nextDraft);
   },
 
   toggleWarmup: async (workoutExerciseId, setNumber) => {
@@ -103,16 +144,39 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     );
     if (exerciseIndex === -1) return;
 
-    set({ draft: nextDraft });
-    await persist(nextDraft);
+    await commit(set, nextDraft);
   },
 
   goToExercise: async (index) => {
     const { draft } = get();
     if (!draft || index < 0 || index >= draft.exercises.length) return;
 
-    const nextDraft: SessionDraft = { ...draft, activeExerciseIndex: index };
-    set({ draft: nextDraft });
-    await persist(nextDraft);
+    await commit(set, { ...draft, activeExerciseIndex: index });
+  },
+
+  adjustRest: async (deltaMs) => {
+    const { draft } = get();
+    if (!draft || draft.restEndsAt === null) return;
+
+    // Only restEndsAt moves — restStartedAt stays put, so the ring's total
+    // duration grows/shrinks with the adjustment (it's just restEndsAt -
+    // restStartedAt) and the "already notified" check keyed on
+    // restStartedAt still holds: nudging rest while already in overtime
+    // must not look like a fresh rest and re-fire the alert.
+    await commit(set, { ...draft, restEndsAt: draft.restEndsAt + deltaMs });
+  },
+
+  endRest: async () => {
+    const { draft } = get();
+    if (!draft) return;
+
+    await commit(set, { ...draft, restEndsAt: null, restStartedAt: null, restNotifiedAt: null });
+  },
+
+  markRestNotified: async () => {
+    const { draft } = get();
+    if (!draft || draft.restStartedAt === null) return;
+
+    await commit(set, { ...draft, restNotifiedAt: draft.restStartedAt });
   },
 }));

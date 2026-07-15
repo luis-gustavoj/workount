@@ -156,6 +156,13 @@
     "skipExercise": "Pular",
     "previousExercise": "Exercício anterior",
     "nextExercise": "Próximo exercício",
-    "extraSet": "Série extra"
+    "extraSet": "Série extra",
+    "restLabel": "Descanso",
+    "restCompleteLabel": "Descanso concluído",
+    "restDecrease": "-15s",
+    "restIncrease": "+15s",
+    "doneResting": "Concluir descanso",
+    "restNotificationTitle": "Descanso concluído",
+    "restNotificationBody": "Hora da próxima série."
   }
 }

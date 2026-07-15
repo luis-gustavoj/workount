@@ -6,10 +6,12 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import { requestRestNotificationPermission } from "@/lib/session/notify";
 import { workingSetCount } from "@/lib/session/player";
 import { useSessionStore } from "@/lib/session/store";
 import type { DraftExercise, LastPerformanceSet, PerformedSet } from "@/lib/session/types";
 
+import { RestTimer } from "./rest-timer";
 import { SetRow } from "./set-row";
 import { Stepper } from "./stepper";
 
@@ -141,6 +143,13 @@ export function SessionPlayer() {
     void hydrate();
   }, [hydrate]);
 
+  // Asked once per player mount, not per rest cycle — RestTimer itself
+  // mounts and unmounts on every set logged (it's only rendered while a
+  // rest is active), so requesting there would re-prompt-check on every set.
+  useEffect(() => {
+    requestRestNotificationPermission();
+  }, []);
+
   const exercise = draft ? draft.exercises[draft.activeExerciseIndex] : null;
 
   if (status === "loading") {
@@ -215,6 +224,18 @@ export function SessionPlayer() {
           </button>
         )}
       </div>
+
+      {/* Rest timer (ticket 013) — visible from anywhere in the player, so
+          it lives outside the scrolling middle band below, alongside the
+          static header. Rendered only while a rest is running or in
+          overtime; `draft.restEndsAt` is the single flag for both. */}
+      {draft.restEndsAt !== null && (
+        <RestTimer
+          restEndsAt={draft.restEndsAt}
+          restStartedAt={draft.restStartedAt ?? draft.restEndsAt}
+          restNotifiedAt={draft.restNotifiedAt}
+        />
+      )}
 
       {/* Middle band — the only scrolling region. */}
       <div className="flex-1 overflow-y-auto px-4">
