@@ -347,6 +347,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      commit_session: {
+        Args: {
+          p_payload: Json
+        }
+        Returns: string
+      }
       get_last_performance: {
         Args: {
           p_program_id: string

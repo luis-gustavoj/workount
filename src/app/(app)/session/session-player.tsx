@@ -3,11 +3,22 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { buildFinishSummary, finishSession, type FinishSummary } from "@/lib/session/commit";
 import { requestRestNotificationPermission } from "@/lib/session/notify";
 import { workingSetCount } from "@/lib/session/player";
+import { createClient } from "@/lib/supabase/client";
 import { useSessionStore } from "@/lib/session/store";
 import type { DraftExercise, LastPerformanceSet, PerformedSet } from "@/lib/session/types";
 
@@ -120,6 +131,92 @@ function EntryDeck({
   );
 }
 
+// The finish flow's own state machine (ticket 014). `summary`/`completedAt`
+// are frozen the instant the user taps Finish — not recomputed on every
+// render — so the numbers shown in the confirmation dialog are exactly the
+// numbers sent to `commit_session`, and a retry after a failure resends the
+// identical payload rather than a slightly-later one.
+type FinishState =
+  | { phase: "idle" }
+  | { phase: "confirming"; summary: FinishSummary; completedAt: Date }
+  | { phase: "committing"; summary: FinishSummary; completedAt: Date }
+  | { phase: "error"; summary: FinishSummary; completedAt: Date; message: string };
+
+/**
+ * The confirmation summary + retry banner (ticket 014, finish flow steps
+ * 1-4): shown before anything is sent, so the user can "notice they forgot
+ * to log the last set." On a commit failure the draft is untouched (see
+ * commit.ts's `finishSession`) and this same dialog turns into the retry
+ * banner — same summary, same Retry action, nothing lost.
+ */
+function FinishDialog({
+  state,
+  onCancel,
+  onConfirm,
+}: {
+  state: Extract<FinishState, { phase: "confirming" | "committing" | "error" }>;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const t = useTranslations("Session");
+  const isCommitting = state.phase === "committing";
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && !isCommitting && onCancel()}>
+      <DialogContent showCloseButton={!isCommitting}>
+        <DialogHeader>
+          <DialogTitle>{t("finishTitle")}</DialogTitle>
+          <DialogDescription>{t("finishBody")}</DialogDescription>
+        </DialogHeader>
+
+        <dl className="grid grid-cols-3 gap-3 text-sm">
+          <div>
+            <dt className="text-ink-muted">{t("finishDuration")}</dt>
+            <dd className="font-mono text-lg font-medium tabular-nums">
+              {t("finishDurationValue", { minutes: Math.round(state.summary.durationSeconds / 60) })}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-ink-muted">{t("finishVolume")}</dt>
+            <dd className="font-mono text-lg font-medium tabular-nums">
+              {t("finishVolumeValue", { volume: Math.round(state.summary.totalVolumeKg) })}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-ink-muted">{t("finishSets")}</dt>
+            <dd className="font-mono text-lg font-medium tabular-nums">{state.summary.setsCompleted}</dd>
+          </div>
+        </dl>
+
+        {state.summary.prExerciseNames.length > 0 && (
+          <p className="bg-ok/10 text-ok rounded px-3 py-2 text-sm font-medium">
+            {t("finishPrBadge", { names: state.summary.prExerciseNames.join(", ") })}
+          </p>
+        )}
+
+        {state.phase === "error" && (
+          <p role="alert" className="bg-danger/10 text-danger rounded px-3 py-2 text-sm">
+            {state.message}
+          </p>
+        )}
+
+        <DialogFooter>
+          <Button type="button" variant="outline" disabled={isCommitting} onClick={onCancel}>
+            {t("finishCancel")}
+          </Button>
+          <Button type="button" disabled={isCommitting} onClick={onConfirm}>
+            {isCommitting
+              ? t("finishSaving")
+              : state.phase === "error"
+                ? t("finishRetry")
+                : t("finishConfirm")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /**
  * The session player (ticket 012) — driven entirely by the Zustand store
  * (store.ts), which is itself hydrated from the IndexedDB draft written by
@@ -132,12 +229,14 @@ function EntryDeck({
  */
 export function SessionPlayer() {
   const t = useTranslations("Session");
+  const router = useRouter();
   const draft = useSessionStore((s) => s.draft);
   const status = useSessionStore((s) => s.status);
   const hydrate = useSessionStore((s) => s.hydrate);
   const logSet = useSessionStore((s) => s.logSet);
   const toggleWarmup = useSessionStore((s) => s.toggleWarmup);
   const goToExercise = useSessionStore((s) => s.goToExercise);
+  const [finishState, setFinishState] = useState<FinishState>({ phase: "idle" });
 
   useEffect(() => {
     void hydrate();
@@ -149,6 +248,47 @@ export function SessionPlayer() {
   useEffect(() => {
     requestRestNotificationPermission();
   }, []);
+
+  function openFinish() {
+    if (!draft) return;
+    const completedAt = new Date();
+    setFinishState({ phase: "confirming", summary: buildFinishSummary(draft, completedAt), completedAt });
+  }
+
+  async function confirmFinish() {
+    if (!draft || finishState.phase === "idle") return;
+    const { summary, completedAt } = finishState;
+    setFinishState({ phase: "committing", summary, completedAt });
+
+    // Everything below touches the network — `getUser()` included, it hits
+    // the auth server and throws (not just `{ error }`) on a plain fetch
+    // failure — so it all goes in one try/catch. Offline is exactly the
+    // case ticket 014 exists for: any failure here must land on the retry
+    // banner, never an unhandled rejection that leaves the dialog stuck on
+    // "Saving…" with no way for the user to retry.
+    try {
+      const supabase = createClient();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      if (userError || !userId) {
+        setFinishState({ phase: "error", summary, completedAt, message: t("finishError") });
+        return;
+      }
+
+      // finishSession only clears the draft after commit_session confirms
+      // the write (commit.ts's "rule that must not be broken") — on
+      // failure the draft is untouched, so this same dialog turns into a
+      // retry banner.
+      const result = await finishSession(supabase, draft, userId, completedAt);
+      if (result.ok) {
+        router.push(`/history/${result.sessionId}`);
+      } else {
+        setFinishState({ phase: "error", summary, completedAt, message: t("finishError") });
+      }
+    } catch {
+      setFinishState({ phase: "error", summary, completedAt, message: t("finishError") });
+    }
+  }
 
   const exercise = draft ? draft.exercises[draft.activeExerciseIndex] : null;
 
@@ -180,6 +320,27 @@ export function SessionPlayer() {
 
   return (
     <div className="flex flex-1 flex-col">
+      {/* Finish strip — a slim bar above the fixed three-band layout
+          (DESIGN.md), so it never competes with the header's exercise
+          name/position for attention. */}
+      <div className="border-line flex justify-end border-b px-4 py-2">
+        <button
+          type="button"
+          onClick={openFinish}
+          className="text-ink-muted h-11 px-2 text-sm font-medium underline underline-offset-2"
+        >
+          {t("finish")}
+        </button>
+      </div>
+
+      {finishState.phase !== "idle" && (
+        <FinishDialog
+          state={finishState}
+          onCancel={() => setFinishState({ phase: "idle" })}
+          onConfirm={() => void confirmFinish()}
+        />
+      )}
+
       {/* Top band — static: name, position, prescription, notes. */}
       <div className="border-line flex flex-col gap-2 border-b px-4 py-4">
         <div className="flex items-center justify-between gap-2">

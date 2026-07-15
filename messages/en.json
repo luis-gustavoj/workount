@@ -163,6 +163,20 @@
     "restIncrease": "+15s",
     "doneResting": "Done resting",
     "restNotificationTitle": "Rest complete",
-    "restNotificationBody": "Time for your next set."
+    "restNotificationBody": "Time for your next set.",
+    "finish": "Finish",
+    "finishTitle": "Finish session?",
+    "finishBody": "Check the last set before you save — a completed session can't be edited.",
+    "finishDuration": "Duration",
+    "finishDurationValue": "{minutes} min",
+    "finishVolume": "Volume",
+    "finishVolumeValue": "{volume} kg",
+    "finishSets": "Sets",
+    "finishPrBadge": "New best: {names}",
+    "finishConfirm": "Finish session",
+    "finishCancel": "Keep training",
+    "finishSaving": "Saving…",
+    "finishRetry": "Retry",
+    "finishError": "Couldn't save — check your connection and try again. Your session is safe on this device."
   }
 }

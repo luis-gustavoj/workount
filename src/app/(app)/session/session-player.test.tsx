@@ -10,6 +10,28 @@ vi.mock("@/lib/session/notify", () => ({
   notifyRestComplete: vi.fn(),
 }));
 
+const { mockPush, mockFinishSession, mockGetUser } = vi.hoisted(() => ({
+  mockPush: vi.fn(),
+  mockFinishSession: vi.fn(),
+  mockGetUser: vi.fn(() => Promise.resolve({ data: { user: { id: "user-1" } }, error: null })),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({ auth: { getUser: mockGetUser } }),
+}));
+
+// buildFinishSummary stays real (it's pure and already covered by
+// commit.test.ts) — only finishSession, the network-touching half of the
+// finish flow, is faked here so these tests don't need a real Supabase RPC.
+vi.mock("@/lib/session/commit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/session/commit")>();
+  return { ...actual, finishSession: mockFinishSession };
+});
+
 vi.mock("idb-keyval", () => ({
   get: vi.fn((key: string) => Promise.resolve(idbStore.get(key))),
   set: vi.fn((key: string, value: unknown) => {
@@ -305,5 +327,113 @@ describe("SessionPlayer", () => {
 
     await user.click(screen.getByRole("button", { name: "Done resting" }));
     expect(screen.queryByText("Rest")).not.toBeInTheDocument();
+  });
+
+  describe("Finish flow (ticket 014)", () => {
+    it("shows a summary — duration, volume, sets completed — before committing anything", async () => {
+      const user = userEvent.setup();
+      idbStore.set(
+        ACTIVE_DRAFT_KEY,
+        draft({
+          startedAt: new Date(Date.now() - 30 * 60_000).toISOString(),
+          exercises: [
+            exercise({
+              sets: [
+                { setNumber: 1, weight: 80, reps: 8, isWarmup: false, rpe: null, completedAt: "t" },
+              ],
+            }),
+          ],
+        }),
+      );
+      renderPlayer();
+
+      await screen.findByText("Barbell Bench Press");
+      await user.click(screen.getByRole("button", { name: "Finish" }));
+
+      expect(await screen.findByText("Finish session?")).toBeInTheDocument();
+      expect(screen.getByText("30 min")).toBeInTheDocument();
+      expect(screen.getByText("640 kg")).toBeInTheDocument();
+      expect(mockFinishSession).not.toHaveBeenCalled();
+    });
+
+    it("on success: commits and navigates to the session in history", async () => {
+      const user = userEvent.setup();
+      mockFinishSession.mockResolvedValue({ ok: true, sessionId: "session-1" });
+      idbStore.set(ACTIVE_DRAFT_KEY, draft());
+      renderPlayer();
+
+      await screen.findByText("Barbell Bench Press");
+      await user.click(screen.getByRole("button", { name: "Finish" }));
+      await screen.findByText("Finish session?");
+      await user.click(screen.getByRole("button", { name: "Finish session" }));
+
+      await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/history/session-1"));
+      expect(mockFinishSession).toHaveBeenCalledTimes(1);
+    });
+
+    it("on failure: keeps the draft, shows a retry banner, and lets the user retry", async () => {
+      const user = userEvent.setup();
+      mockFinishSession.mockResolvedValue({ ok: false, error: "offline" });
+      idbStore.set(ACTIVE_DRAFT_KEY, draft());
+      renderPlayer();
+
+      await screen.findByText("Barbell Bench Press");
+      await user.click(screen.getByRole("button", { name: "Finish" }));
+      await screen.findByText("Finish session?");
+      await user.click(screen.getByRole("button", { name: "Finish session" }));
+
+      expect(
+        await screen.findByText(
+          "Couldn't save — check your connection and try again. Your session is safe on this device.",
+        ),
+      ).toBeInTheDocument();
+      expect(mockPush).not.toHaveBeenCalled();
+
+      // Retry: same dialog, Retry re-invokes finishSession with the same draft.
+      mockFinishSession.mockResolvedValue({ ok: true, sessionId: "session-1" });
+      await user.click(screen.getByRole("button", { name: "Retry" }));
+      await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/history/session-1"));
+      expect(mockFinishSession).toHaveBeenCalledTimes(2);
+    });
+
+    it("on a network failure resolving the user (offline, before commit_session is even reached): shows the retry banner rather than hanging", async () => {
+      // Regression guard: supabase-js's auth.getUser() rejects outright on a
+      // plain fetch failure (it only returns `{ error }` for actual
+      // AuthErrors) — this must land on the same retry banner as a
+      // commit_session failure, not an unhandled rejection that leaves the
+      // dialog stuck on "Saving…" forever.
+      const user = userEvent.setup();
+      mockGetUser.mockRejectedValueOnce(new Error("network request failed"));
+      idbStore.set(ACTIVE_DRAFT_KEY, draft());
+      renderPlayer();
+
+      await screen.findByText("Barbell Bench Press");
+      await user.click(screen.getByRole("button", { name: "Finish" }));
+      await screen.findByText("Finish session?");
+      await user.click(screen.getByRole("button", { name: "Finish session" }));
+
+      expect(
+        await screen.findByText(
+          "Couldn't save — check your connection and try again. Your session is safe on this device.",
+        ),
+      ).toBeInTheDocument();
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockFinishSession).not.toHaveBeenCalled();
+    });
+
+    it("Keep training dismisses the dialog without calling finishSession", async () => {
+      const user = userEvent.setup();
+      idbStore.set(ACTIVE_DRAFT_KEY, draft());
+      renderPlayer();
+
+      await screen.findByText("Barbell Bench Press");
+      await user.click(screen.getByRole("button", { name: "Finish" }));
+      await screen.findByText("Finish session?");
+
+      await user.click(screen.getByRole("button", { name: "Keep training" }));
+
+      expect(screen.queryByText("Finish session?")).not.toBeInTheDocument();
+      expect(mockFinishSession).not.toHaveBeenCalled();
+    });
   });
 });

@@ -163,6 +163,20 @@
     "restIncrease": "+15s",
     "doneResting": "Concluir descanso",
     "restNotificationTitle": "Descanso concluído",
-    "restNotificationBody": "Hora da próxima série."
+    "restNotificationBody": "Hora da próxima série.",
+    "finish": "Finalizar",
+    "finishTitle": "Finalizar sessão?",
+    "finishBody": "Confira a última série antes de salvar — uma sessão concluída não pode ser editada.",
+    "finishDuration": "Duração",
+    "finishDurationValue": "{minutes} min",
+    "finishVolume": "Volume",
+    "finishVolumeValue": "{volume} kg",
+    "finishSets": "Séries",
+    "finishPrBadge": "Novo recorde: {names}",
+    "finishConfirm": "Finalizar sessão",
+    "finishCancel": "Continuar treinando",
+    "finishSaving": "Salvando…",
+    "finishRetry": "Tentar novamente",
+    "finishError": "Não foi possível salvar — verifique sua conexão e tente novamente. Sua sessão está segura neste dispositivo."
   }
 }
