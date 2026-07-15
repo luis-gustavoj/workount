@@ -12,6 +12,8 @@ One migration, `supabase/migrations/0001_init.sql`, creating exactly the tables 
 
 Plus the indexes listed there.
 
+**One addition beyond the spec:** add `locale text NOT NULL DEFAULT 'en' CHECK (locale IN ('en','pt-BR'))` to `profiles` — a display preference alongside `weight_unit`, for i18n ([ADR-0005](../../../docs/adr/0005-i18n-is-a-ui-layer-concern.md), ticket 022). No new RLS policy; the `profiles` policy already covers it.
+
 ### RLS policies
 
 - `profiles` → `id = auth.uid()`.

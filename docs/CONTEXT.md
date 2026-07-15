@@ -75,6 +75,18 @@ You *perform a session* **from** a *workout*. A workout is a noun you edit; a se
 
 ---
 
+## The language nouns
+
+The app ships in **English** and **Brazilian Portuguese**. i18n is a *presentation-layer* concern only — the domain never becomes locale-aware ([ADR-0005](adr/0005-i18n-is-a-ui-layer-concern.md)).
+
+**Locale** — which language a user sees: `'en'` or `'pt-BR'`. A **display preference**, stored on `profiles.locale`, exactly like `weight_unit` — read at the UI edge, never a dimension of the data. There is **no `[locale]` in the URL**; the app is private and behind auth, so locale lives in the profile (with a cookie + `Accept-Language` fallback on the pre-auth sign-in screen).
+
+**Message catalog** — the translated strings, keyed and resolved by `next-intl`. Holds two things: **UI copy** (buttons, labels, errors) and the **display labels for enums** — `muscle_group` and `equipment` stay in the database as stable English keys (`'chest'`, `'barbell'`) and the catalog turns them into `"Peito"`, `"Barra"`. The DB value is identity; the catalog is display.
+
+**Untranslated by design** — the **60 seeded exercise names** are *not* translated; they read the same in both locales. The `name` is the identity key for all progress tracking, and **custom exercises** are free-text in whatever language the user typed — so the picker is bilingual-in-practice regardless, and a Portuguese speaker who wants a Portuguese name creates a custom exercise. A per-name translation table was deliberately deferred.
+
+---
+
 ## Words we deliberately do not use
 
 - **"Routine"**, **"split"**, **"plan"** — all mean *program*. Pick one word; it's `program`.

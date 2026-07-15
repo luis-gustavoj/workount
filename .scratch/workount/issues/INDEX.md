@@ -32,6 +32,9 @@ Work **blockers-first**. Any ticket whose blockers are all `done` can be picked 
 
 014 ──┬─ 019 pwa
       └─ 020 forgot-to-finish-push   (needs 019)
+
+005 ──── 022 i18n-foundation   ◀── land before 006; screens 006–018
+                                    author copy through the catalog
 ```
 
 ## Tickets
@@ -59,6 +62,7 @@ Work **blockers-first**. Any ticket whose blockers are all `done` can be picked 
 | 019 | [PWA — installable, offline shell](019-pwa.md) | 014 | Polish |
 | 020 | [Forgot-to-finish push reminder](020-forgot-to-finish-push.md) | 019 | Polish |
 | 021 | [Duplicate a program](021-duplicate-program.md) | 009 | Polish |
+| 022 | [i18n foundation (en + pt-BR)](022-i18n.md) | 003, 005 | Foundation |
 
 ## Two checkpoints worth stopping at
 
