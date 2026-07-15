@@ -276,7 +276,7 @@ async function main(): Promise<void> {
 
     console.log("Building ownership chains…");
     const chainB = await buildChain(clientB, b.data.user.id, globalExId);
-    await buildChain(clientA, a.data.user.id, globalExId); // A's own — positive control below
+    const chainA = await buildChain(clientA, a.data.user.id, globalExId); // A's own — positive control below
 
     console.log("\nIsolation — A must read zero of B's rows:");
     await expectNoRows(clientA, "profiles", "id", b.data.user.id, "profiles");
@@ -320,6 +320,51 @@ async function main(): Promise<void> {
     check(
       !globalForB.error && (globalForB.data?.length ?? 0) === 1,
       "B can read the global exercise catalog",
+    );
+
+    // Ticket 007 / ADR-0002: deleting a workout must not touch the sessions
+    // performed from it. `sessions.workout_id` is ON DELETE SET NULL, not
+    // CASCADE — this proves it at the database, as the caller (A, via her own
+    // RLS-scoped client) would actually delete it, not just parse the DDL.
+    console.log("\nWorkout delete invariant (ticket 007 / ADR-0002):");
+    const beforeDelete = await clientA
+      .from("sessions")
+      .select("id, workout_id")
+      .eq("id", chainA.sessionId)
+      .single();
+    check(
+      !beforeDelete.error && beforeDelete.data?.workout_id === chainA.workoutId,
+      "session references its workout before delete",
+    );
+
+    const deleteWorkout = await clientA
+      .from("workouts")
+      .delete()
+      .eq("id", chainA.workoutId);
+    check(!deleteWorkout.error, "A can delete her own workout");
+
+    const afterDelete = await clientA
+      .from("sessions")
+      .select("id, workout_id")
+      .eq("id", chainA.sessionId)
+      .maybeSingle();
+    check(
+      !afterDelete.error && afterDelete.data !== null,
+      "session survives the workout's deletion",
+    );
+    check(
+      afterDelete.data?.workout_id === null,
+      "session.workout_id is set to null, not cascaded away",
+    );
+
+    const sessionSetAfterDelete = await clientA
+      .from("session_sets")
+      .select("id")
+      .eq("id", chainA.sessionSetId)
+      .maybeSingle();
+    check(
+      !sessionSetAfterDelete.error && sessionSetAfterDelete.data !== null,
+      "session_set survives the workout's deletion",
     );
   } finally {
     // Delete the test users; ON DELETE CASCADE removes every row they created,

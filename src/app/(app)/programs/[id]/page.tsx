@@ -6,17 +6,22 @@ import { getTranslations } from "next-intl/server";
 import { programIdSchema } from "@/lib/validation/program";
 import {
   archiveProgram,
+  createWorkout,
   followProgram,
   updateProgram,
 } from "@/app/(app)/programs/actions";
+import { WorkoutList } from "@/app/(app)/programs/[id]/workouts/workout-list";
 import { ProgramFields } from "@/app/(app)/programs/program-fields";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DAY_OF_WEEK_KEYS, WORKOUT_NAME_MAX } from "@/lib/validation/workout";
 
 /**
- * `/programs/[id]` — program detail (ticket 006). Shows name, description, its
- * workouts (empty until ticket 007), and the follow / edit / archive actions.
+ * `/programs/[id]` — program detail (ticket 006), plus its workouts (ticket
+ * 007). Shows name, description, its workouts (list, create, reorder,
+ * delete), and the follow / edit / archive actions.
  *
  * Access control is entirely RLS: the SELECT is scoped to the owner, so another
  * user's program returns no row and we render a 404 (`notFound`), never a 500
@@ -39,18 +44,24 @@ export default async function ProgramDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 
-  const [{ data: program }, { data: profile }] = await Promise.all([
-    supabase
-      .from("programs")
-      .select("id, name, description")
-      .eq("id", id)
-      .maybeSingle(),
-    supabase
-      .from("profiles")
-      .select("active_program_id")
-      .eq("id", user.id)
-      .maybeSingle(),
-  ]);
+  const [{ data: program }, { data: profile }, { data: workouts }] =
+    await Promise.all([
+      supabase
+        .from("programs")
+        .select("id, name, description")
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("active_program_id")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("workouts")
+        .select("id, name, day_of_week, position, program_id")
+        .eq("program_id", id)
+        .order("position"),
+    ]);
 
   if (!program) notFound();
 
@@ -69,6 +80,8 @@ export default async function ProgramDetailPage({
       .maybeSingle();
     activeProgramName = active?.name ?? null;
   }
+
+  const dayLabels = DAY_OF_WEEK_KEYS.map((key) => t(key));
 
   return (
     <main className="mx-auto flex w-full max-w-[480px] flex-col gap-6 px-4 py-8">
@@ -109,9 +122,65 @@ export default async function ProgramDetailPage({
         )}
       </section>
 
+      {/* Workouts: the days within this program (ticket 007). Ordered by
+          `position`; drag-to-reorder writes that column back. Create is a
+          plain <details> disclosure, same pattern as the edit form below. */}
       <section className="flex flex-col gap-3 border-t border-line pt-5">
         <h2 className="text-sm font-medium">{t("workouts")}</h2>
-        <p className="text-ink-muted text-sm">{t("workoutsEmpty")}</p>
+
+        {workouts && workouts.length > 0 ? (
+          <WorkoutList
+            workouts={workouts}
+            programId={program.id}
+            dayLabels={dayLabels}
+            deleteLabel={t("deleteWorkout")}
+            deleteConfirmLabel={t("deleteWorkoutConfirm")}
+            dragLabel={t("dragToReorder")}
+          />
+        ) : (
+          <p className="text-ink-muted text-sm">{t("workoutsEmpty")}</p>
+        )}
+
+        <details className="group">
+          <summary className="flex w-fit cursor-pointer list-none items-center gap-1 text-sm font-medium">
+            {t("addWorkout")}
+          </summary>
+          <form action={createWorkout} className="mt-3 flex flex-col gap-3">
+            <input type="hidden" name="programId" value={program.id} />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="workout-name" className="text-sm font-medium">
+                {t("workoutName")}
+              </label>
+              <Input
+                id="workout-name"
+                name="name"
+                placeholder={t("workoutNamePlaceholder")}
+                required
+                maxLength={WORKOUT_NAME_MAX}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="workout-day" className="text-sm font-medium">
+                {t("dayOfWeek")}
+              </label>
+              <select
+                id="workout-day"
+                name="dayOfWeek"
+                className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+              >
+                <option value="">{t("dayOfWeekNone")}</option>
+                {DAY_OF_WEEK_KEYS.map((key, i) => (
+                  <option key={key} value={i}>
+                    {t(key)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button type="submit" className="self-start">
+              {t("addWorkout")}
+            </Button>
+          </form>
+        </details>
       </section>
 
       <section className="flex flex-col gap-3 border-t border-line pt-5">

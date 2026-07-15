@@ -8,6 +8,12 @@ import {
   programIdSchema,
   updateProgramSchema,
 } from "@/lib/validation/program";
+import {
+  createWorkoutSchema,
+  deleteWorkoutSchema,
+  reorderWorkoutsSchema,
+  updateWorkoutSchema,
+} from "@/lib/validation/workout";
 import { createClient } from "@/lib/supabase/server";
 
 // Server Actions for program CRUD and the "follow this program" flow (ticket
@@ -148,4 +154,133 @@ export async function archiveProgram(formData: FormData) {
 
   revalidatePath("/", "layout");
   redirect("/programs");
+}
+
+// Workout CRUD within a program (ticket 007). A workout is the PLAN — see
+// CLAUDE.md and docs/CONTEXT.md — never to be confused with a session.
+
+/**
+ * Add a workout (a day) to a program, appended to the end of its order.
+ *
+ * INSERT can't fail closed the way an RLS-scoped UPDATE/DELETE does (a bad id
+ * there just matches zero rows); a caller-supplied programId the user doesn't
+ * own would instead surface as a raw Postgres RLS error. So, like
+ * `followProgram`, this confirms ownership with an RLS-scoped SELECT first and
+ * throws the same friendly "Program not found" the other actions use.
+ */
+export async function createWorkout(formData: FormData) {
+  const { programId, name, dayOfWeek } = createWorkoutSchema.parse({
+    programId: formData.get("programId"),
+    name: formData.get("name"),
+    dayOfWeek: formData.get("dayOfWeek"),
+  });
+
+  const { supabase } = await requireUser();
+
+  const { data: program, error: lookupError } = await supabase
+    .from("programs")
+    .select("id")
+    .eq("id", programId)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  if (!program) throw new Error("Program not found");
+
+  const { data: maxRow } = await supabase
+    .from("workouts")
+    .select("position")
+    .eq("program_id", programId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const position = (maxRow?.position ?? -1) + 1;
+
+  const { error } = await supabase.from("workouts").insert({
+    program_id: programId,
+    name,
+    day_of_week: dayOfWeek,
+    position,
+  });
+  if (error) throw error;
+
+  revalidatePath(`/programs/${programId}`);
+}
+
+/** Rename a workout, or change its day of week (including to/from unscheduled). */
+export async function updateWorkout(formData: FormData) {
+  const { id, programId, name, dayOfWeek } = updateWorkoutSchema.parse({
+    id: formData.get("id"),
+    programId: formData.get("programId"),
+    name: formData.get("name"),
+    dayOfWeek: formData.get("dayOfWeek"),
+  });
+
+  const { supabase } = await requireUser();
+
+  const { data: updated, error } = await supabase
+    .from("workouts")
+    .update({ name, day_of_week: dayOfWeek })
+    .eq("id", id)
+    .eq("program_id", programId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!updated) throw new Error("Workout not found");
+
+  revalidatePath(`/programs/${programId}`);
+  revalidatePath(`/programs/${programId}/workouts/${id}`);
+}
+
+/**
+ * Delete a workout. `sessions.workout_id` is `ON DELETE SET NULL` (migration
+ * 0001, ADR-0002) — a plain `.delete()` here is enough; there is no cascade to
+ * guard against and no session data to touch. See workout-delete-invariant.test.ts.
+ */
+export async function deleteWorkout(formData: FormData) {
+  const { id, programId } = deleteWorkoutSchema.parse({
+    id: formData.get("id"),
+    programId: formData.get("programId"),
+  });
+
+  const { supabase } = await requireUser();
+
+  const { data: deleted, error } = await supabase
+    .from("workouts")
+    .delete()
+    .eq("id", id)
+    .eq("program_id", programId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!deleted) throw new Error("Workout not found");
+
+  revalidatePath(`/programs/${programId}`);
+}
+
+/**
+ * Persist a drag-reorder as sequential `position` values. Called directly from
+ * the client (not a `<form action>`) since a drag gesture has no submit event
+ * to hang one on; the args are still Zod-validated at this boundary like every
+ * other mutation.
+ */
+export async function reorderWorkouts(programId: string, ids: string[]) {
+  const { programId: validProgramId, ids: validIds } =
+    reorderWorkoutsSchema.parse({ programId, ids });
+
+  const { supabase } = await requireUser();
+
+  const updates = validIds.map((id, index) =>
+    supabase
+      .from("workouts")
+      .update({ position: index })
+      .eq("id", id)
+      .eq("program_id", validProgramId),
+  );
+
+  const results = await Promise.all(updates);
+  for (const { error } of results) {
+    if (error) throw error;
+  }
+
+  revalidatePath(`/programs/${validProgramId}`);
 }
