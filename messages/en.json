@@ -16,6 +16,33 @@
     "language": "Language",
     "languageDescription": "The language the app is displayed in."
   },
+  "Programs": {
+    "title": "Programs",
+    "new": "New program",
+    "active": "Active",
+    "emptyTitle": "No programs yet",
+    "emptyBody": "Create your first program to start planning workouts.",
+    "createCta": "Create a program",
+    "back": "Programs",
+    "newTitle": "New program",
+    "nameLabel": "Name",
+    "namePlaceholder": "PPL — Summer",
+    "descriptionLabel": "Description",
+    "descriptionOptional": "Optional",
+    "descriptionPlaceholder": "What is this program for?",
+    "create": "Create program",
+    "cancel": "Cancel",
+    "noDescription": "No description yet.",
+    "workouts": "Workouts",
+    "workoutsEmpty": "No workouts yet — you’ll add them next.",
+    "follow": "Follow this program",
+    "activeNote": "You’re following this program.",
+    "switchNote": "Following this replaces {name} as your active program.",
+    "edit": "Edit",
+    "save": "Save changes",
+    "archive": "Archive",
+    "archiveHint": "Hides the program from your list. Its history is kept."
+  },
   "Locale": {
     "en": "English",
     "pt-BR": "Português (Brasil)"
