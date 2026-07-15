@@ -1,0 +1,6 @@
+# Supabase CLI local state — never committed.
+.branches
+.temp
+
+# Local env overrides for the CLI (secrets for `supabase start`).
+.env

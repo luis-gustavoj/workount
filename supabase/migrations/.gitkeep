@@ -1,0 +1,3 @@
+# Keeps the migrations directory under version control while it is empty.
+# The first real migration (schema + RLS) lands in ticket 003. Delete this file
+# when a migration exists.
