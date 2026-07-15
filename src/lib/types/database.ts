@@ -347,7 +347,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_last_performance: {
+        Args: {
+          p_program_id: string
+          p_exercise_ids: string[]
+        }
+        Returns: {
+          exercise_id: string
+          set_number: number
+          weight: number
+          reps: number
+          performed_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
