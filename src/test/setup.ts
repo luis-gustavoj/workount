@@ -29,3 +29,21 @@ if (!globalThis.ResizeObserver) {
     disconnect() {}
   };
 }
+
+// jsdom has no matchMedia, but RestSheet (ticket 023) reads
+// `prefers-reduced-motion` on every mount — a default "no preference" stub
+// keeps every other test that renders the session player from crashing;
+// individual tests can still override it with vi.spyOn to simulate reduced
+// motion.
+if (!window.matchMedia) {
+  window.matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  });
+}

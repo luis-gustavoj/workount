@@ -72,7 +72,7 @@ export function RestTimer({
   const ringPercent = Math.round(elapsedFraction(restStartedAt, restEndsAt, now) * 100);
 
   return (
-    <div className="border-line bg-surface flex items-center justify-between gap-3 border-b px-4 py-3">
+    <>
       <div className="flex items-center gap-3">
         <div
           aria-hidden
@@ -119,6 +119,6 @@ export function RestTimer({
           {t("doneResting")}
         </button>
       </div>
-    </div>
+    </>
   );
 }

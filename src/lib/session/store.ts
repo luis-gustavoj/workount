@@ -29,6 +29,23 @@ type SessionStore = {
   logSet: (workoutExerciseId: string, input: LogSetInput) => Promise<void>;
   /** Flips a set already logged between warmup and working, in place. */
   toggleWarmup: (workoutExerciseId: string, setNumber: number) => Promise<void>;
+  /**
+   * Corrects a mis-entered weight/reps on an already-logged set (ticket 023).
+   * Does not touch `completedAt` — this is a correction, not a re-performance.
+   */
+  updateSet: (
+    workoutExerciseId: string,
+    setNumber: number,
+    patch: { weight?: number; reps?: number },
+  ) => Promise<void>;
+  /**
+   * Undoes a mistaken log (ticket 023). Renumbers the remainder to 1..N —
+   * required because `logSet` mints the next `setNumber` as `sets.length + 1`,
+   * so a gap left by deleting a middle set would collide with the next log.
+   * Also clears an active rest if the deleted set was the last one, since a
+   * rest auto-started by a set that no longer exists shouldn't keep counting.
+   */
+  deleteSet: (workoutExerciseId: string, setNumber: number) => Promise<void>;
   goToExercise: (index: number) => Promise<void>;
   /** ±15s buttons (ticket 013). No-op while no rest timer is running. */
   adjustRest: (deltaMs: number) => Promise<void>;
@@ -145,6 +162,42 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     if (exerciseIndex === -1) return;
 
     await commit(set, nextDraft);
+  },
+
+  updateSet: async (workoutExerciseId, setNumber, patch) => {
+    const { draft } = get();
+    if (!draft) return;
+
+    const { draft: nextDraft, exerciseIndex } = mapExercise(draft, workoutExerciseId, (sets) =>
+      sets.map((s) => (s.setNumber === setNumber ? { ...s, ...patch } : s)),
+    );
+    if (exerciseIndex === -1) return;
+
+    await commit(set, nextDraft);
+  },
+
+  deleteSet: async (workoutExerciseId, setNumber) => {
+    const { draft } = get();
+    if (!draft) return;
+
+    const { draft: nextDraft, exerciseIndex } = mapExercise(draft, workoutExerciseId, (currentSets) =>
+      currentSets
+        .filter((s) => s.setNumber !== setNumber)
+        .map((s, index) => ({ ...s, setNumber: index + 1 })),
+    );
+    if (exerciseIndex === -1) return;
+
+    // `exerciseIndex` is positional and unchanged by the map above, so it's
+    // safe to read the pre-mutation sets off the original draft here.
+    const sets = draft.exercises[exerciseIndex].sets;
+    const wasLast = sets.length > 0 && sets[sets.length - 1].setNumber === setNumber;
+
+    const finalDraft: SessionDraft =
+      wasLast && draft.restEndsAt !== null
+        ? { ...nextDraft, restEndsAt: null, restStartedAt: null, restNotifiedAt: null }
+        : nextDraft;
+
+    await commit(set, finalDraft);
   },
 
   goToExercise: async (index) => {

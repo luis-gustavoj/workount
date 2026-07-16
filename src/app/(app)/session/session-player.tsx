@@ -22,7 +22,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useSessionStore } from "@/lib/session/store";
 import type { DraftExercise, LastPerformanceSet, PerformedSet } from "@/lib/session/types";
 
-import { RestTimer } from "./rest-timer";
+import { RestSheet } from "./rest-sheet";
 import { SetRow } from "./set-row";
 import { Stepper } from "./stepper";
 
@@ -49,7 +49,7 @@ function referenceForOrdinal(
 }
 
 function formatLastTime(t: Translate, reference: LastPerformanceSet | null): string | null {
-  return reference ? t("lastTime", { weight: reference.weight, reps: reference.reps }) : null;
+  return reference ? t("lastTimeValue", { weight: reference.weight, reps: reference.reps }) : null;
 }
 
 /**
@@ -127,6 +127,51 @@ function EntryDeck({
           {t("logSet")}
         </Button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The bottom dock (ticket 023): the entry deck first, then the rest sheet
+ * below it — normal-flow siblings, not an overlay. Mounting the sheet grows
+ * the dock's total height and pushes the scrolling middle band's visible
+ * extent up automatically; no transform math or JS measurement needed. The
+ * entry deck stays interactive above it at all times — never hidden, never
+ * dimmed. The safe-area-inset bottom padding lives on this outer wrapper so
+ * it always sits beneath whichever element is last, without a conditional
+ * branch.
+ */
+function BottomDock({
+  exercise,
+  workingCount,
+  onLog,
+  restEndsAt,
+  restStartedAt,
+  restNotifiedAt,
+}: {
+  exercise: DraftExercise;
+  workingCount: number;
+  onLog: (input: { weight: number; reps: number; isWarmup: boolean }) => void;
+  restEndsAt: number | null;
+  restStartedAt: number | null;
+  restNotifiedAt: number | null;
+}) {
+  return (
+    <div className="pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+      <div className="border-line bg-surface border-t px-4 py-4">
+        <EntryDeck
+          // Remounts (resetting weight/reps/warmup to fresh defaults) on
+          // two distinct signals: `sets.length` for "a new set was just
+          // logged" (including a warmup — its own toggle must reset too),
+          // and `workingCount` for "the next working ordinal changed even
+          // though no new set was added" (toggling warmup on an *earlier*
+          // row via its own SetRow control).
+          key={`${exercise.workoutExerciseId}-${exercise.sets.length}-${workingCount}`}
+          exercise={exercise}
+          onLog={onLog}
+        />
+      </div>
+      <RestSheet restEndsAt={restEndsAt} restStartedAt={restStartedAt} restNotifiedAt={restNotifiedAt} />
     </div>
   );
 }
@@ -235,16 +280,28 @@ export function SessionPlayer() {
   const hydrate = useSessionStore((s) => s.hydrate);
   const logSet = useSessionStore((s) => s.logSet);
   const toggleWarmup = useSessionStore((s) => s.toggleWarmup);
+  const updateSet = useSessionStore((s) => s.updateSet);
+  const deleteSet = useSessionStore((s) => s.deleteSet);
   const goToExercise = useSessionStore((s) => s.goToExercise);
   const [finishState, setFinishState] = useState<FinishState>({ phase: "idle" });
+  // Which logged set (by setNumber) is showing its edit surface, one row at
+  // a time (ticket 023). Lives here, not in SetRow, so switching exercises
+  // or logging/deleting a set can reliably close it — a stale setNumber
+  // could otherwise point at the wrong row after a delete renumbers the rest.
+  const [editingSetNumber, setEditingSetNumber] = useState<number | null>(null);
+
+  function goTo(index: number) {
+    setEditingSetNumber(null);
+    void goToExercise(index);
+  }
 
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
 
-  // Asked once per player mount, not per rest cycle — RestTimer itself
-  // mounts and unmounts on every set logged (it's only rendered while a
-  // rest is active), so requesting there would re-prompt-check on every set.
+  // Asked once per player mount, not per rest cycle — the rest sheet's own
+  // content mounts and unmounts on every set logged (it's only shown while
+  // a rest is active), so requesting there would re-prompt-check on every set.
   useEffect(() => {
     requestRestNotificationPermission();
   }, []);
@@ -348,7 +405,7 @@ export function SessionPlayer() {
             type="button"
             aria-label={t("previousExercise")}
             disabled={!canGoPrev}
-            onClick={() => void goToExercise(draft.activeExerciseIndex - 1)}
+            onClick={() => goTo(draft.activeExerciseIndex - 1)}
             className="text-ink-muted grid size-11 shrink-0 place-items-center disabled:opacity-30"
           >
             <ChevronLeft className="size-5" />
@@ -366,7 +423,7 @@ export function SessionPlayer() {
             type="button"
             aria-label={t("nextExercise")}
             disabled={!canGoNext}
-            onClick={() => void goToExercise(draft.activeExerciseIndex + 1)}
+            onClick={() => goTo(draft.activeExerciseIndex + 1)}
             className="text-ink-muted grid size-11 shrink-0 place-items-center disabled:opacity-30"
           >
             <ChevronRight className="size-5" />
@@ -378,25 +435,13 @@ export function SessionPlayer() {
         {canGoNext && (
           <button
             type="button"
-            onClick={() => void goToExercise(draft.activeExerciseIndex + 1)}
+            onClick={() => goTo(draft.activeExerciseIndex + 1)}
             className="text-ink-muted self-center text-sm underline underline-offset-2"
           >
             {t("skipExercise")}
           </button>
         )}
       </div>
-
-      {/* Rest timer (ticket 013) — visible from anywhere in the player, so
-          it lives outside the scrolling middle band below, alongside the
-          static header. Rendered only while a rest is running or in
-          overtime; `draft.restEndsAt` is the single flag for both. */}
-      {draft.restEndsAt !== null && (
-        <RestTimer
-          restEndsAt={draft.restEndsAt}
-          restStartedAt={draft.restStartedAt ?? draft.restEndsAt}
-          restNotifiedAt={draft.restNotifiedAt}
-        />
-      )}
 
       {/* Middle band — the only scrolling region. */}
       <div className="flex-1 overflow-y-auto px-4">
@@ -418,6 +463,20 @@ export function SessionPlayer() {
                 ordinal === null ? null : formatLastTime(t, referenceForOrdinal(exercise.lastPerformance, ordinal))
               }
               onToggleWarmup={() => void toggleWarmup(exercise.workoutExerciseId, s.setNumber)}
+              edit={{
+                setNumber: s.setNumber,
+                isEditing: editingSetNumber === s.setNumber,
+                onStart: () => setEditingSetNumber(s.setNumber),
+                onSave: (input) => {
+                  setEditingSetNumber(null);
+                  void updateSet(exercise.workoutExerciseId, s.setNumber, input);
+                },
+                onCancel: () => setEditingSetNumber(null),
+                onDelete: () => {
+                  setEditingSetNumber(null);
+                  void deleteSet(exercise.workoutExerciseId, s.setNumber);
+                },
+              }}
             />
           );
         })}
@@ -431,21 +490,14 @@ export function SessionPlayer() {
         />
       </div>
 
-      {/* Bottom band — the entry deck. Fixed, thumb-height, above the
-          safe-area inset, never scrolls away (DESIGN.md). */}
-      <div className="border-line bg-surface border-t px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-        <EntryDeck
-          // Remounts (resetting weight/reps/warmup to fresh defaults) on
-          // two distinct signals: `sets.length` for "a new set was just
-          // logged" (including a warmup — its own toggle must reset too),
-          // and `workingCount` for "the next working ordinal changed even
-          // though no new set was added" (toggling warmup on an *earlier*
-          // row via its own SetRow control).
-          key={`${exercise.workoutExerciseId}-${exercise.sets.length}-${workingCount}`}
-          exercise={exercise}
-          onLog={(input) => void logSet(exercise.workoutExerciseId, input)}
-        />
-      </div>
+      <BottomDock
+        exercise={exercise}
+        workingCount={workingCount}
+        onLog={(input) => void logSet(exercise.workoutExerciseId, input)}
+        restEndsAt={draft.restEndsAt}
+        restStartedAt={draft.restStartedAt ?? draft.restEndsAt}
+        restNotifiedAt={draft.restNotifiedAt}
+      />
     </div>
   );
 }

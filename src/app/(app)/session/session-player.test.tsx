@@ -1,5 +1,5 @@
 import { NextIntlClientProvider } from "next-intl";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -130,7 +130,8 @@ describe("SessionPlayer", () => {
     );
     renderPlayer();
 
-    expect(await screen.findByText("Last time: 80 × 8")).toBeInTheDocument();
+    expect(await screen.findByText("Last time")).toBeInTheDocument();
+    expect(screen.getByText("80 × 8")).toBeInTheDocument();
   });
 
   it("logs a set and writes through to IndexedDB immediately", async () => {
@@ -326,7 +327,125 @@ describe("SessionPlayer", () => {
     await screen.findByText("Rest");
 
     await user.click(screen.getByRole("button", { name: "Done resting" }));
-    expect(screen.queryByText("Rest")).not.toBeInTheDocument();
+    // The rest sheet stays mounted through its own exit transition (ticket
+    // 023) rather than unmounting instantly, so this settles asynchronously.
+    await waitFor(() => expect(screen.queryByText("Rest")).not.toBeInTheDocument());
+  });
+
+  describe("Rest sheet + inline set editing (ticket 023)", () => {
+    it("keeps the entry deck and rest sheet both interactable at once", async () => {
+      const user = userEvent.setup();
+      idbStore.set(ACTIVE_DRAFT_KEY, draft());
+      renderPlayer();
+
+      await screen.findByText("Barbell Bench Press");
+      await user.click(screen.getByRole("button", { name: "Log set" }));
+      await screen.findByText("Rest");
+
+      // The rest sheet's own control still works...
+      await user.click(screen.getByRole("button", { name: "-15s" }));
+      // ...and the entry deck above it, seeded for the next set, is still
+      // operable at the same time — neither is hidden or dimmed behind the
+      // other.
+      await user.clear(screen.getByLabelText("Weight (kg)"));
+      await user.type(screen.getByLabelText("Weight (kg)"), "85");
+
+      expect(screen.getByLabelText("Weight (kg)")).toHaveValue(85);
+      expect(screen.getByText("Rest")).toBeInTheDocument();
+    });
+
+    it("edits a logged set: tap to open, adjust weight, Save writes through to IndexedDB", async () => {
+      const user = userEvent.setup();
+      idbStore.set(ACTIVE_DRAFT_KEY, draft());
+      renderPlayer();
+
+      await screen.findByText("Barbell Bench Press");
+      await user.click(screen.getByRole("button", { name: "Log set" }));
+      await screen.findByText("Set 1");
+
+      await user.click(screen.getByRole("button", { name: "Edit set 1" }));
+      // The entry deck below has its own "Weight (kg)" Stepper for the next
+      // set — scope to the edit row so these queries don't collide with it.
+      const editRow = screen.getByText("Set 1").closest("div")!;
+      expect(within(editRow).getByLabelText("Weight (kg)")).toHaveValue(20);
+      await user.click(within(editRow).getByRole("button", { name: "Weight (kg): increase" }));
+      await user.click(screen.getByRole("button", { name: "Save" }));
+
+      await waitFor(() =>
+        expect(idbSet).toHaveBeenLastCalledWith(
+          ACTIVE_DRAFT_KEY,
+          expect.objectContaining({
+            exercises: [
+              expect.objectContaining({
+                sets: [expect.objectContaining({ setNumber: 1, weight: 22.5, reps: 8 })],
+              }),
+            ],
+          }),
+        ),
+      );
+      // Edit mode closed — the Save/Cancel/Delete row is gone.
+      expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    });
+
+    it("deletes a logged set after a second confirm tap, renumbering the remainder", async () => {
+      const user = userEvent.setup();
+      idbStore.set(ACTIVE_DRAFT_KEY, draft({ exercises: [exercise({ targetSets: 2 })] }));
+      renderPlayer();
+
+      await screen.findByText("Barbell Bench Press");
+      await user.click(screen.getByRole("button", { name: "Log set" }));
+      await screen.findByText("Set 1");
+      await user.click(screen.getByRole("button", { name: "Log set" }));
+      await screen.findByText("Set 2");
+
+      await user.click(screen.getByRole("button", { name: "Edit set 1" }));
+      await user.click(screen.getByRole("button", { name: "Delete" }));
+      // Delete doesn't fire on the first tap — it swaps into a confirm step.
+      expect(idbSet).not.toHaveBeenLastCalledWith(
+        ACTIVE_DRAFT_KEY,
+        expect.objectContaining({
+          exercises: [expect.objectContaining({ sets: [expect.objectContaining({ setNumber: 1 })] })],
+        }),
+      );
+      await user.click(screen.getByRole("button", { name: "Confirm delete" }));
+
+      await waitFor(() =>
+        expect(idbSet).toHaveBeenLastCalledWith(
+          ACTIVE_DRAFT_KEY,
+          expect.objectContaining({
+            exercises: [expect.objectContaining({ sets: [expect.objectContaining({ setNumber: 1 })] })],
+          }),
+        ),
+      );
+      expect(useSessionStore.getState().draft!.exercises[0].sets).toHaveLength(1);
+    });
+
+    it("resets edit state when navigating to a different exercise", async () => {
+      const user = userEvent.setup();
+      idbStore.set(
+        ACTIVE_DRAFT_KEY,
+        draft({
+          exercises: [
+            exercise({ workoutExerciseId: "we-1", exerciseName: "Squat" }),
+            exercise({ workoutExerciseId: "we-2", exerciseName: "Leg Press" }),
+          ],
+        }),
+      );
+      renderPlayer();
+
+      await screen.findByText("Squat");
+      await user.click(screen.getByRole("button", { name: "Log set" }));
+      await screen.findByText("Set 1");
+      await user.click(screen.getByRole("button", { name: "Edit set 1" }));
+      expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Skip" }));
+      await screen.findByText("Leg Press");
+      await user.click(screen.getByRole("button", { name: "Previous exercise" }));
+      await screen.findByText("Squat");
+
+      expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+    });
   });
 
   describe("Finish flow (ticket 014)", () => {

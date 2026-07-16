@@ -33,6 +33,8 @@ Work **blockers-first**. Any ticket whose blockers are all `done` can be picked 
 014 ──┬─ 019 pwa
       └─ 020 forgot-to-finish-push   (needs 019)
 
+013 ──── 023 session-player-ux-refactor
+
 005 ──── 022 i18n-foundation   ◀── land before 006; screens 006–018
                                     author copy through the catalog
 ```
@@ -63,6 +65,7 @@ Work **blockers-first**. Any ticket whose blockers are all `done` can be picked 
 | 020 | [Forgot-to-finish push reminder](020-forgot-to-finish-push.md) | 019 | Polish |
 | 021 | [Duplicate a program](021-duplicate-program.md) | 009 | Polish |
 | 022 | [i18n foundation (en + pt-BR)](022-i18n.md) | 003, 005 | Foundation |
+| 023 | [Session player UX refactor: rest sheet, editable sets, unclamped last-time](023-session-player-ux-refactor.md) | 012, 013 | Polish |
 
 ## Two checkpoints worth stopping at
 

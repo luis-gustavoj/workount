@@ -331,6 +331,128 @@ describe("toggleWarmup", () => {
   });
 });
 
+describe("updateSet", () => {
+  it("mutates weight/reps in place and persists, without touching completedAt", async () => {
+    useSessionStore.setState({ draft: draft() });
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+    const before = useSessionStore.getState().draft!.exercises[0].sets[0];
+
+    await useSessionStore.getState().updateSet("we-1", 1, { weight: 82.5, reps: 6 });
+
+    const after = useSessionStore.getState().draft!.exercises[0].sets[0];
+    expect(after.weight).toBe(82.5);
+    expect(after.reps).toBe(6);
+    expect(after.completedAt).toBe(before.completedAt);
+    expect(idbSet).toHaveBeenLastCalledWith(
+      ACTIVE_DRAFT_KEY,
+      expect.objectContaining({
+        exercises: [expect.objectContaining({ sets: [expect.objectContaining({ weight: 82.5, reps: 6 })] })],
+      }),
+    );
+  });
+
+  it("applies a partial patch, leaving the other field untouched", async () => {
+    useSessionStore.setState({ draft: draft() });
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+
+    await useSessionStore.getState().updateSet("we-1", 1, { weight: 85 });
+
+    const set = useSessionStore.getState().draft!.exercises[0].sets[0];
+    expect(set.weight).toBe(85);
+    expect(set.reps).toBe(8);
+  });
+
+  it("is a no-op for an unknown workoutExerciseId", async () => {
+    useSessionStore.setState({ draft: draft() });
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+    vi.clearAllMocks();
+
+    await useSessionStore.getState().updateSet("does-not-exist", 1, { weight: 999 });
+
+    expect(useSessionStore.getState().draft!.exercises[0].sets[0].weight).toBe(80);
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op when hydration hasn't produced a draft yet", async () => {
+    await useSessionStore.getState().updateSet("we-1", 1, { weight: 999 });
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteSet", () => {
+  it("removes the set and renumbers the remainder to 1..N", async () => {
+    useSessionStore.setState({ draft: draft() });
+    await useSessionStore.getState().logSet("we-1", { weight: 60, reps: 10, isWarmup: false });
+    await useSessionStore.getState().logSet("we-1", { weight: 70, reps: 9, isWarmup: false });
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+
+    await useSessionStore.getState().deleteSet("we-1", 2);
+
+    const sets = useSessionStore.getState().draft!.exercises[0].sets;
+    expect(sets).toEqual([
+      expect.objectContaining({ setNumber: 1, weight: 60 }),
+      expect.objectContaining({ setNumber: 2, weight: 80 }),
+    ]);
+  });
+
+  it("a subsequent logSet after a delete produces a non-colliding setNumber", async () => {
+    useSessionStore.setState({ draft: draft() });
+    await useSessionStore.getState().logSet("we-1", { weight: 60, reps: 10, isWarmup: false });
+    await useSessionStore.getState().logSet("we-1", { weight: 70, reps: 9, isWarmup: false });
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+
+    await useSessionStore.getState().deleteSet("we-1", 2);
+    await useSessionStore.getState().logSet("we-1", { weight: 90, reps: 5, isWarmup: false });
+
+    const setNumbers = useSessionStore.getState().draft!.exercises[0].sets.map((s) => s.setNumber);
+    expect(setNumbers).toEqual([1, 2, 3]);
+    expect(new Set(setNumbers).size).toBe(3);
+  });
+
+  it("clears the rest fields when deleting the last set while a rest is running", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    useSessionStore.setState({ draft: draft({ exercises: [exercise({ restSeconds: 90 })] }) });
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+    expect(useSessionStore.getState().draft!.restEndsAt).not.toBeNull();
+
+    await useSessionStore.getState().deleteSet("we-1", 1);
+
+    const after = useSessionStore.getState().draft!;
+    expect(after.restEndsAt).toBeNull();
+    expect(after.restStartedAt).toBeNull();
+    expect(after.restNotifiedAt).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it("leaves an active rest untouched when deleting a non-last set", async () => {
+    useSessionStore.setState({ draft: draft() });
+    await useSessionStore.getState().logSet("we-1", { weight: 60, reps: 10, isWarmup: false });
+    await useSessionStore.getState().logSet("we-1", { weight: 70, reps: 9, isWarmup: false });
+    const restEndsAt = useSessionStore.getState().draft!.restEndsAt;
+
+    await useSessionStore.getState().deleteSet("we-1", 1);
+
+    expect(useSessionStore.getState().draft!.restEndsAt).toBe(restEndsAt);
+  });
+
+  it("is a no-op for an unknown workoutExerciseId", async () => {
+    useSessionStore.setState({ draft: draft() });
+    await useSessionStore.getState().logSet("we-1", { weight: 80, reps: 8, isWarmup: false });
+    vi.clearAllMocks();
+
+    await useSessionStore.getState().deleteSet("does-not-exist", 1);
+
+    expect(useSessionStore.getState().draft!.exercises[0].sets).toHaveLength(1);
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op when hydration hasn't produced a draft yet", async () => {
+    await useSessionStore.getState().deleteSet("we-1", 1);
+    expect(idbSet).not.toHaveBeenCalled();
+  });
+});
+
 describe("goToExercise", () => {
   it("moves to a valid index and persists it", async () => {
     useSessionStore.setState({
