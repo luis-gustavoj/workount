@@ -129,6 +129,26 @@
     "kettlebell": "Kettlebell",
     "other": "Other"
   },
+  "Home": {
+    "loading": "Loading…",
+    "noProgramTitle": "No active program",
+    "noProgramBody": "Create a program to get a recommendation here every time you open the app.",
+    "noProgramCta": "Create a program",
+    "resumeTitle": "Session in progress",
+    "resumeBody": "{minutes, plural, =0 {Started just now} one {# min} other {# min}}",
+    "resume": "Resume",
+    "finishNow": "Finish now",
+    "discard": "Discard",
+    "todayTitle": "Today: {name}",
+    "startWorkout": "Start workout",
+    "restTitle": "Rest day",
+    "restDoneToday": "{names} done today ✓",
+    "restNext": "Next up: {name}",
+    "startAny": "Start any workout",
+    "streakLabel": "Streak",
+    "streakValue": "{days, plural, =0 {No streak yet} one {# day} other {# days}}",
+    "deletedWorkout": "Deleted workout"
+  },
   "WorkoutDetail": {
     "startSession": "Start session",
     "startSessionError": "Couldn't start the session. Check your connection and try again."
