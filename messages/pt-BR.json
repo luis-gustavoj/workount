@@ -147,7 +147,8 @@
     "startAny": "Iniciar qualquer treino",
     "streakLabel": "Sequência",
     "streakValue": "{days, plural, =0 {Ainda sem sequência} one {# dia} other {# dias}}",
-    "deletedWorkout": "Treino excluído"
+    "deletedWorkout": "Treino excluído",
+    "seeAll": "Ver tudo"
   },
   "WorkoutDetail": {
     "startSession": "Iniciar sessão",
@@ -198,5 +199,26 @@
     "finishSaving": "Salvando…",
     "finishRetry": "Tentar novamente",
     "finishError": "Não foi possível salvar — verifique sua conexão e tente novamente. Sua sessão está segura neste dispositivo."
+  },
+  "History": {
+    "title": "Histórico",
+    "back": "Histórico",
+    "emptyTitle": "Nenhuma sessão ainda",
+    "emptyBody": "Finalize um treino e ele aparecerá aqui.",
+    "deletedWorkout": "Treino excluído",
+    "volumeValue": "{volume} kg",
+    "durationValue": "{minutes} min",
+    "setsValue": "{count, plural, one {# série} other {# séries}}",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "daysAgo": "Há {days} dias",
+    "prevPage": "Anterior",
+    "nextPage": "Próxima",
+    "warmupMarker": "A",
+    "warmupLabel": "Aquecimento",
+    "prBadge": "PR",
+    "prBadgeLabel": "Novo recorde pessoal",
+    "targetRange": "Prescrito {repMin}–{repMax}",
+    "setWeightReps": "{weight} kg × {reps}"
   }
 }

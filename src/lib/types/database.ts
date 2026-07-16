@@ -344,7 +344,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_session_summary: {
+        Row: {
+          session_id: string
+          user_id: string
+          program_id: string
+          workout_id: string | null
+          workout_name: string | null
+          status: string
+          started_at: string
+          completed_at: string | null
+          duration_seconds: number | null
+          total_volume: number
+          set_count: number
+          exercise_count: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       commit_session: {
@@ -364,6 +395,14 @@ export type Database = {
           weight: number
           reps: number
           performed_at: string
+        }[]
+      }
+      get_session_prs: {
+        Args: {
+          p_session_id: string
+        }
+        Returns: {
+          session_set_id: string
         }[]
       }
     }

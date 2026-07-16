@@ -11,7 +11,12 @@ import { resolveHome, type HomeState } from "@/lib/home/resolve";
 import { calculateStreak } from "@/lib/home/streak";
 import { ACTIVE_DRAFT_KEY, type SessionDraft } from "@/lib/session/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type Status = "loading" | "ready";
 
@@ -38,7 +43,8 @@ export function HomeScreen({ data }: { data: HomeData }) {
     let cancelled = false;
 
     async function resolve() {
-      const stored = (await idbGet(ACTIVE_DRAFT_KEY)) as SessionDraft | undefined;
+      const stored = (await idbGet(ACTIVE_DRAFT_KEY)) as
+        SessionDraft | undefined;
       if (cancelled) return;
 
       const now = Date.now();
@@ -57,7 +63,9 @@ export function HomeScreen({ data }: { data: HomeData }) {
       setState(resolveHome(input));
       setResolvedAt(now);
       setMinutesInProgress(
-        draft ? Math.max(0, Math.round((now - Date.parse(draft.startedAt)) / 60000)) : 0,
+        draft
+          ? Math.max(0, Math.round((now - Date.parse(draft.startedAt)) / 60000))
+          : 0,
       );
       setStatus("ready");
     }
@@ -88,7 +96,7 @@ export function HomeScreen({ data }: { data: HomeData }) {
   if (status === "loading" || !state || resolvedAt === null) {
     return (
       <main className="mx-auto flex w-full max-w-[480px] flex-1 items-center justify-center px-4 py-12">
-        <p className="text-ink-muted text-sm">{t("loading")}</p>
+        <p className="text-sm text-ink-muted">{t("loading")}</p>
       </main>
     );
   }
@@ -118,14 +126,22 @@ export function HomeScreen({ data }: { data: HomeData }) {
         <Card className="gap-4">
           <CardHeader className="gap-1">
             <CardTitle>{t("resumeTitle")}</CardTitle>
-            <CardDescription>{t("resumeBody", { minutes: minutesInProgress })}</CardDescription>
+            <CardDescription>
+              {t("resumeBody", { minutes: minutesInProgress })}
+            </CardDescription>
           </CardHeader>
           <div className="flex flex-wrap gap-2 px-(--card-spacing)">
             <Button asChild>
-              <Link href="/session">{state.stale ? t("finishNow") : t("resume")}</Link>
+              <Link href="/session">
+                {state.stale ? t("finishNow") : t("resume")}
+              </Link>
             </Button>
             {state.stale && (
-              <Button type="button" variant="ghost" onClick={() => void discardDraft()}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => void discardDraft()}
+              >
                 {t("discard")}
               </Button>
             )}
@@ -142,7 +158,9 @@ export function HomeScreen({ data }: { data: HomeData }) {
               </CardHeader>
               <div className="px-(--card-spacing)">
                 <Button asChild>
-                  <Link href={`/programs/${data.activeProgramId}/workouts/${workout.id}`}>
+                  <Link
+                    href={`/programs/${data.activeProgramId}/workouts/${workout.id}`}
+                  >
                     {t("startWorkout")}
                   </Link>
                 </Button>
@@ -164,7 +182,9 @@ export function HomeScreen({ data }: { data: HomeData }) {
               </CardDescription>
             )}
             {state.nextWorkout && (
-              <CardDescription>{t("restNext", { name: state.nextWorkout.name })}</CardDescription>
+              <CardDescription>
+                {t("restNext", { name: state.nextWorkout.name })}
+              </CardDescription>
             )}
           </CardHeader>
           <div className="px-(--card-spacing)">
@@ -179,20 +199,35 @@ export function HomeScreen({ data }: { data: HomeData }) {
         <section className="flex flex-col gap-3 border-t border-line pt-5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium">{t("streakLabel")}</h2>
-            <span className="text-ink-muted text-sm">{t("streakValue", { days: streak })}</span>
+            <span className="text-sm text-ink-muted">
+              {t("streakValue", { days: streak })}
+            </span>
           </div>
           {lastThree.length > 0 && (
             <ul className="flex flex-col gap-2">
               {lastThree.map((session) => (
-                <li key={session.id} className="flex items-center justify-between text-sm">
-                  <span className="truncate">{session.workoutName ?? t("deletedWorkout")}</span>
-                  <span className="text-ink-muted shrink-0">
-                    {new Date(session.completedAt).toLocaleDateString()}
-                  </span>
+                <li key={session.id} className="text-sm">
+                  <Link
+                    href={`/history/${session.id}`}
+                    className="flex items-center justify-between gap-2 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
+                    <span className="truncate">
+                      {session.workoutName ?? t("deletedWorkout")}
+                    </span>
+                    <span className="shrink-0 text-ink-muted">
+                      {new Date(session.completedAt).toLocaleDateString()}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
           )}
+          <Link
+            href="/history"
+            className="self-start text-sm text-ink-muted underline-offset-2 hover:underline"
+          >
+            {t("seeAll")}
+          </Link>
         </section>
       )}
     </main>

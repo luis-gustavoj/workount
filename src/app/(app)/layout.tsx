@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { History, Settings } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -24,6 +24,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Shell");
+  const tHistory = await getTranslations("History");
   const supabase = await createClient();
   const {
     data: { user },
@@ -45,7 +46,10 @@ export default async function AppLayout({
   if (!profile) {
     // Seed locale from Accept-Language on this fallback creation path too, so a
     // Portuguese browser doesn't get an English profile when the trigger missed.
-    const seed = profileFromUser(user, (await headers()).get("accept-language"));
+    const seed = profileFromUser(
+      user,
+      (await headers()).get("accept-language"),
+    );
     // ignoreDuplicates so a race with the trigger (or a second tab) is a no-op
     // rather than a unique-violation. RLS permits this insert: the profiles
     // policy allows `id = auth.uid()`, and we are that user.
@@ -59,8 +63,8 @@ export default async function AppLayout({
   const label = displayName ?? user.email ?? t("signedIn");
 
   return (
-    <div className="flex min-h-full flex-col flex-1">
-      <header className="border-line bg-surface/80 sticky top-0 z-10 border-b backdrop-blur">
+    <div className="flex min-h-full flex-1 flex-col">
+      <header className="sticky top-0 z-10 border-b border-line bg-surface/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-[480px] items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
             {avatarUrl ? (
@@ -77,22 +81,27 @@ export default async function AppLayout({
                 // silently breaks, and the initials fallback only covers a null
                 // avatar_url, not a failed load.
                 referrerPolicy="no-referrer"
-                className="border-line size-7 shrink-0 rounded-full border object-cover"
+                className="size-7 shrink-0 rounded-full border border-line object-cover"
               />
             ) : (
               <span
                 aria-hidden
-                className="bg-raised text-ink-muted grid size-7 shrink-0 place-items-center rounded-full text-xs font-medium"
+                className="grid size-7 shrink-0 place-items-center rounded-full bg-raised text-xs font-medium text-ink-muted"
               >
                 {label.charAt(0).toUpperCase()}
               </span>
             )}
-            <span className="text-ink truncate text-sm font-medium">
+            <span className="truncate text-sm font-medium text-ink">
               {label}
             </span>
           </div>
 
           <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/history" aria-label={tHistory("title")}>
+                <History className="size-4" />
+              </Link>
+            </Button>
             <Button asChild variant="ghost" size="sm">
               <Link href="/settings" aria-label={t("settings")}>
                 <Settings className="size-4" />
