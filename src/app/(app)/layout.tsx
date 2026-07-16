@@ -59,7 +59,7 @@ export default async function AppLayout({
   const label = displayName ?? user.email ?? t("signedIn");
 
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex min-h-full flex-col flex-1">
       <header className="border-line bg-surface/80 sticky top-0 z-10 border-b backdrop-blur">
         <div className="mx-auto flex w-full max-w-[480px] items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
