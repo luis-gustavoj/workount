@@ -1,4 +1,4 @@
-import { History, Settings } from "lucide-react";
+import { Dumbbell, History, Settings } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -97,6 +97,11 @@ export default async function AppLayout({
           </div>
 
           <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/" aria-label="Home">
+                <Dumbbell className="size-4" />
+              </Link>
+            </Button>
             <Button asChild variant="ghost" size="sm">
               <Link href="/history" aria-label={tHistory("title")}>
                 <History className="size-4" />
