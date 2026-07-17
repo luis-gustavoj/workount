@@ -18,9 +18,10 @@ import { useSessionStore } from "@/lib/session/store";
 // timing around the `restEndsAt` presence signal.
 
 function renderSheet(props: { restEndsAt: number | null; restStartedAt: number | null; restNotifiedAt: number | null }) {
+  const withOffset = { bottomOffset: 96, ...props };
   return render(
     <NextIntlClientProvider locale="en" messages={en}>
-      <RestSheet {...props} />
+      <RestSheet {...withOffset} />
     </NextIntlClientProvider>,
   );
 }
@@ -58,7 +59,7 @@ describe("RestSheet", () => {
 
     rerender(
       <NextIntlClientProvider locale="en" messages={en}>
-        <RestSheet restEndsAt={90_000} restStartedAt={0} restNotifiedAt={null} />
+        <RestSheet restEndsAt={90_000} restStartedAt={0} restNotifiedAt={null} bottomOffset={96} />
       </NextIntlClientProvider>,
     );
 
@@ -78,7 +79,7 @@ describe("RestSheet", () => {
 
     rerender(
       <NextIntlClientProvider locale="en" messages={en}>
-        <RestSheet restEndsAt={null} restStartedAt={null} restNotifiedAt={null} />
+        <RestSheet restEndsAt={null} restStartedAt={null} restNotifiedAt={null} bottomOffset={96} />
       </NextIntlClientProvider>,
     );
 
@@ -112,7 +113,7 @@ describe("RestSheet", () => {
 
     rerender(
       <NextIntlClientProvider locale="en" messages={en}>
-        <RestSheet restEndsAt={null} restStartedAt={null} restNotifiedAt={null} />
+        <RestSheet restEndsAt={null} restStartedAt={null} restNotifiedAt={null} bottomOffset={96} />
       </NextIntlClientProvider>,
     );
 

@@ -75,7 +75,17 @@ function SetRowEditForm({
   }, []);
 
   return (
-    <div ref={containerRef} className="flex flex-col gap-3 border-b border-line py-3 last:border-b-0">
+    // `bg-raised` + rounded, unlike a plain list row or the entry deck's own
+    // `bg-surface`: this is the same Weight/Reps Stepper pair the entry deck
+    // uses for logging the *next* set, and the two used to be visually
+    // identical with nothing but a tiny row label between them on screen —
+    // confusing which one a tap would affect. A distinct card makes it
+    // unambiguous this block belongs to "the set you're correcting," not
+    // "the next set."
+    <div
+      ref={containerRef}
+      className="bg-raised my-2 flex flex-col gap-3 rounded-lg px-3 py-3"
+    >
       <span className={cn("text-sm font-medium", isWarmup ? "text-ink-faint" : "text-ink-muted")}>
         {isWarmup && (
           <span aria-hidden className="mr-1">

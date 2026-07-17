@@ -185,6 +185,7 @@
     "cancelEdit": "Cancelar",
     "deleteSet": "Excluir",
     "confirmDeleteSet": "Confirmar exclusão",
+    "editingHint": "Editando — salve ou cancele acima para continuar registrando",
     "skipExercise": "Pular",
     "previousExercise": "Exercício anterior",
     "nextExercise": "Próximo exercício",

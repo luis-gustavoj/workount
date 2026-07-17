@@ -185,6 +185,7 @@
     "cancelEdit": "Cancel",
     "deleteSet": "Delete",
     "confirmDeleteSet": "Confirm delete",
+    "editingHint": "Editing — save or cancel above to keep logging",
     "skipExercise": "Skip",
     "previousExercise": "Previous exercise",
     "nextExercise": "Next exercise",

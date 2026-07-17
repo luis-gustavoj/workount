@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,7 +21,6 @@ import { workingSetCount } from "@/lib/session/player";
 import { createClient } from "@/lib/supabase/client";
 import { useSessionStore } from "@/lib/session/store";
 import type { DraftExercise, LastPerformanceSet, PerformedSet } from "@/lib/session/types";
-import { cn } from "@/lib/utils";
 
 import { RestSheet } from "./rest-sheet";
 import { SetRow } from "./set-row";
@@ -133,58 +132,62 @@ function EntryDeck({
 }
 
 /**
- * The bottom dock (ticket 023): the entry deck first, then the rest sheet
- * below it — normal-flow siblings, not an overlay. Mounting the sheet grows
- * the dock's total height and pushes the scrolling middle band's visible
- * extent up automatically; no transform math or JS measurement needed. The
- * entry deck stays interactive above it at all times — never hidden, never
- * dimmed. The safe-area-inset bottom padding lives on this outer wrapper so
- * it always sits beneath whichever element is last, without a conditional
- * branch — but the wrapper's own background must still match whichever
- * child that is (`bg-raised` under the rest sheet, `bg-surface` under the
- * bare entry deck), or the safe-area strip shows the page's darker `bg`
- * through it as a black bar above the home indicator.
+ * The bottom dock: weight/reps steppers, a warmup toggle, and Log — the
+ * entry deck, and nothing else. The rest sheet used to mount inside this
+ * (ticket 023), growing the dock's height and shoving the entry deck and the
+ * scrolling set list around every time a rest started or ended; it's now a
+ * floating overlay `SessionPlayer` renders as its own sibling (see
+ * `RestSheet`), so this dock's height — and its background, always
+ * `bg-surface` — never changes because of resting. The safe-area-inset
+ * bottom padding lives on this outer wrapper so it's always painted the same
+ * color as the content above it, never the page's darker `bg` showing
+ * through as a black strip above the home indicator.
+ *
+ * While a logged set is being edited (`isEditing`), the deck hides itself
+ * instead of staying visible underneath: its weight/reps steppers are
+ * styled identically to the edit form's own steppers, and the two showing
+ * at once — one for "the next set," one for "the set you're correcting" —
+ * is what made editing confusing. Only one stepper pair is ever on screen.
  */
 function BottomDock({
   exercise,
   workingCount,
   onLog,
-  restEndsAt,
-  restStartedAt,
-  restNotifiedAt,
+  isEditing,
 }: {
   exercise: DraftExercise;
   workingCount: number;
   onLog: (input: { weight: number; reps: number; isWarmup: boolean }) => void;
-  restEndsAt: number | null;
-  restStartedAt: number | null;
-  restNotifiedAt: number | null;
+  isEditing: boolean;
 }) {
+  const t = useTranslations("Session");
   return (
     <div
-      className={cn(
-        "pb-[calc(env(safe-area-inset-bottom)+1rem)]",
-        restEndsAt !== null ? "bg-raised" : "bg-surface",
-      )}
+      className="bg-surface pb-[calc(env(safe-area-inset-bottom)+1rem)]"
       style={{
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
       }}
     >
       <div className="border-line bg-surface border-t px-4 py-4">
-        <EntryDeck
-          // Remounts (resetting weight/reps/warmup to fresh defaults) on
-          // two distinct signals: `sets.length` for "a new set was just
-          // logged" (including a warmup — its own toggle must reset too),
-          // and `workingCount` for "the next working ordinal changed even
-          // though no new set was added" (toggling warmup on an *earlier*
-          // row via its own SetRow control).
-          key={`${exercise.workoutExerciseId}-${exercise.sets.length}-${workingCount}`}
-          exercise={exercise}
-          onLog={onLog}
-        />
+        {isEditing ? (
+          <p className="text-ink-muted flex h-14 items-center justify-center text-center text-sm">
+            {t("editingHint")}
+          </p>
+        ) : (
+          <EntryDeck
+            // Remounts (resetting weight/reps/warmup to fresh defaults) on
+            // two distinct signals: `sets.length` for "a new set was just
+            // logged" (including a warmup — its own toggle must reset too),
+            // and `workingCount` for "the next working ordinal changed even
+            // though no new set was added" (toggling warmup on an *earlier*
+            // row via its own SetRow control).
+            key={`${exercise.workoutExerciseId}-${exercise.sets.length}-${workingCount}`}
+            exercise={exercise}
+            onLog={onLog}
+          />
+        )}
       </div>
-      <RestSheet restEndsAt={restEndsAt} restStartedAt={restStartedAt} restNotifiedAt={restNotifiedAt} />
     </div>
   );
 }
@@ -302,6 +305,36 @@ export function SessionPlayer() {
   // or logging/deleting a set can reliably close it — a stale setNumber
   // could otherwise point at the wrong row after a delete renumbers the rest.
   const [editingSetNumber, setEditingSetNumber] = useState<number | null>(null);
+
+  // The bottom dock's rendered height (including its safe-area padding),
+  // measured so the floating rest sheet can sit flush above it without
+  // either one needing to know the other's layout in advance. Changes with
+  // content (e.g. a wrapped warmup row on a narrow phone), not just on
+  // mount, hence a ResizeObserver rather than a one-time measurement.
+  //
+  // A callback ref, not `useRef` + a `[]`-effect: the dock doesn't exist in
+  // the DOM yet on the very first render (this component briefly returns
+  // its "loading" branch before `draft` resolves), so a plain ref's
+  // `.current` is still null when a mount-only effect runs — and since refs
+  // aren't reactive, nothing ever re-triggers that effect once the real dock
+  // node shows up. A callback ref fires exactly when the node it's attached
+  // to is actually created (or torn down), so the observer always ends up
+  // attached to the true element.
+  const [dockHeight, setDockHeight] = useState(0);
+  const dockObserverRef = useRef<ResizeObserver | null>(null);
+  const dockRef = useCallback((node: HTMLDivElement | null) => {
+    dockObserverRef.current?.disconnect();
+    dockObserverRef.current = null;
+    if (!node) return;
+    // `offsetHeight`, not the observer entry's `contentRect` — the latter is
+    // the content-box (padding excluded), which under-measures this element
+    // by exactly its safe-area bottom padding and makes the floating rest
+    // sheet sit that much too low, overlapping the entry deck's Reps
+    // stepper instead of sitting flush above it.
+    const observer = new ResizeObserver(() => setDockHeight(node.offsetHeight));
+    observer.observe(node);
+    dockObserverRef.current = observer;
+  }, []);
 
   function goTo(index: number) {
     setEditingSetNumber(null);
@@ -503,13 +536,19 @@ export function SessionPlayer() {
         />
       </div>
 
-      <BottomDock
-        exercise={exercise}
-        workingCount={workingCount}
-        onLog={(input) => void logSet(exercise.workoutExerciseId, input)}
+      <div ref={dockRef}>
+        <BottomDock
+          exercise={exercise}
+          workingCount={workingCount}
+          onLog={(input) => void logSet(exercise.workoutExerciseId, input)}
+          isEditing={editingSetNumber !== null}
+        />
+      </div>
+      <RestSheet
         restEndsAt={draft.restEndsAt}
         restStartedAt={draft.restStartedAt ?? draft.restEndsAt}
         restNotifiedAt={draft.restNotifiedAt}
+        bottomOffset={dockHeight}
       />
     </div>
   );

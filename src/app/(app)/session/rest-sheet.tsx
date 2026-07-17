@@ -81,20 +81,29 @@ function resolveContent(
 }
 
 /**
- * The rest timer's chrome + presence wrapper (ticket 023): a persistent,
- * non-modal bottom sheet — not the shadcn `Sheet` (a Radix `Dialog`: scrim,
- * focus trap, `aria-modal`), the wrong tool since the entry deck above it
- * must stay interactive throughout. Rendered unconditionally by the parent;
- * this component decides show/hide itself from `restEndsAt`.
+ * The rest timer's chrome + presence wrapper: a persistent, non-modal
+ * floating card — not the shadcn `Sheet` (a Radix `Dialog`: scrim, focus
+ * trap, `aria-modal`), the wrong tool since the entry deck below it must
+ * stay interactive throughout, and not an in-flow layout element either
+ * (ticket 023's original approach) — growing the bottom dock's height every
+ * time a rest starts/stops shoved the entry deck and the scrolling set list
+ * around, which reads as the layout itself misbehaving. `position: fixed`,
+ * floating just above the dock (`bottomOffset`, the dock's own measured
+ * height from `SessionPlayer`'s `ResizeObserver`), so neither the dock nor
+ * the scrolling list ever resize when a rest starts or ends. Rendered
+ * unconditionally by the parent; this component decides show/hide itself
+ * from `restEndsAt`.
  */
 export function RestSheet({
   restEndsAt,
   restStartedAt,
   restNotifiedAt,
+  bottomOffset,
 }: {
   restEndsAt: number | null;
   restStartedAt: number | null;
   restNotifiedAt: number | null;
+  bottomOffset: number;
 }) {
   const active = restEndsAt !== null;
   const phase = usePresence(active);
@@ -128,10 +137,15 @@ export function RestSheet({
       role="status"
       aria-live="polite"
       className={cn(
-        "border-line bg-raised flex items-center justify-between gap-3 rounded-t-lg border-t px-4 py-3",
+        "border-line bg-raised fixed z-20 mx-3 flex items-center justify-between gap-3 rounded-lg border px-4 py-3",
         "transition-transform duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         phase === "open" ? "translate-y-0" : "translate-y-full",
       )}
+      style={{
+        left: "env(safe-area-inset-left)",
+        right: "env(safe-area-inset-right)",
+        bottom: bottomOffset,
+      }}
     >
       <RestTimer
         restEndsAt={content.restEndsAt}
