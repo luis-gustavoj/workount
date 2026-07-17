@@ -8,7 +8,7 @@ import { SessionPlayer } from "@/app/(app)/session/session-player";
  */
 export default function SessionPage() {
   return (
-    <main className="flex min-h-0 flex-1 flex-col max-w-[490px] mx-auto w-full">
+    <main className="flex min-h-0 flex-1 flex-col overflow-hidden max-w-[490px] mx-auto w-full">
       <SessionPlayer />
     </main>
   );

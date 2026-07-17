@@ -104,7 +104,7 @@ function EntryDeck({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-6">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
         <Stepper label={t("weightLabel")} value={weight} step={WEIGHT_STEP} onChange={setWeight} />
         <Stepper label={t("repsLabel")} value={reps} step={REPS_STEP} onChange={setReps} />
       </div>
@@ -382,7 +382,7 @@ export function SessionPlayer() {
   const ordinals = workingOrdinals(exercise.sets);
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Finish strip — a slim bar above the fixed three-band layout
           (DESIGN.md), so it never competes with the header's exercise
           name/position for attention. */}

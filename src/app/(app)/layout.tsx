@@ -63,7 +63,7 @@ export default async function AppLayout({
   const label = displayName ?? user.email ?? t("signedIn");
 
   return (
-    <div className="flex min-h-dvh flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <header
         className="sticky top-0 z-10 border-b border-line bg-surface/80 backdrop-blur"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -124,7 +124,7 @@ export default async function AppLayout({
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
     </div>
   );
 }

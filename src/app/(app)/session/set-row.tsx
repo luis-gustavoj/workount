@@ -85,7 +85,7 @@ function SetRowEditForm({
         {label}
       </span>
 
-      <div className="flex items-center justify-around">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
         <Stepper label={t("weightLabel")} value={weight} step={WEIGHT_STEP} onChange={setWeight} />
         <Stepper label={t("repsLabel")} value={reps} step={REPS_STEP} onChange={setReps} />
       </div>
