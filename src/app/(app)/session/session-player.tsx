@@ -21,6 +21,7 @@ import { workingSetCount } from "@/lib/session/player";
 import { createClient } from "@/lib/supabase/client";
 import { useSessionStore } from "@/lib/session/store";
 import type { DraftExercise, LastPerformanceSet, PerformedSet } from "@/lib/session/types";
+import { cn } from "@/lib/utils";
 
 import { RestSheet } from "./rest-sheet";
 import { SetRow } from "./set-row";
@@ -139,7 +140,10 @@ function EntryDeck({
  * entry deck stays interactive above it at all times — never hidden, never
  * dimmed. The safe-area-inset bottom padding lives on this outer wrapper so
  * it always sits beneath whichever element is last, without a conditional
- * branch.
+ * branch — but the wrapper's own background must still match whichever
+ * child that is (`bg-raised` under the rest sheet, `bg-surface` under the
+ * bare entry deck), or the safe-area strip shows the page's darker `bg`
+ * through it as a black bar above the home indicator.
  */
 function BottomDock({
   exercise,
@@ -158,7 +162,10 @@ function BottomDock({
 }) {
   return (
     <div
-      className="pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+      className={cn(
+        "pb-[calc(env(safe-area-inset-bottom)+1rem)]",
+        restEndsAt !== null ? "bg-raised" : "bg-surface",
+      )}
       style={{
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
