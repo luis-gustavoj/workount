@@ -94,7 +94,7 @@ export function RestTimer({
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
           aria-label={t("restDecrease")}
@@ -113,7 +113,7 @@ export function RestTimer({
         </button>
         <button
           type="button"
-          className="text-ink-muted h-11 shrink-0 rounded px-2 text-sm font-medium underline underline-offset-2"
+          className="text-ink-muted h-11 shrink-0 rounded px-3 text-sm font-medium underline underline-offset-2"
           onClick={() => void endRest()}
         >
           {t("doneResting")}

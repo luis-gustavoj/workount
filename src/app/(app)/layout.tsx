@@ -63,8 +63,11 @@ export default async function AppLayout({
   const label = displayName ?? user.email ?? t("signedIn");
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-line bg-surface/80 backdrop-blur">
+    <div className="flex min-h-dvh flex-1 flex-col">
+      <header
+        className="sticky top-0 z-10 border-b border-line bg-surface/80 backdrop-blur"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <div className="mx-auto flex w-full max-w-[480px] items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
             {avatarUrl ? (

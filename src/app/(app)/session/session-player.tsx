@@ -104,7 +104,7 @@ function EntryDeck({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-around">
+      <div className="flex items-center justify-between gap-6">
         <Stepper label={t("weightLabel")} value={weight} step={WEIGHT_STEP} onChange={setWeight} />
         <Stepper label={t("repsLabel")} value={reps} step={REPS_STEP} onChange={setReps} />
       </div>
@@ -157,7 +157,13 @@ function BottomDock({
   restNotifiedAt: number | null;
 }) {
   return (
-    <div className="pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+    <div
+      className="pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+      style={{
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
+    >
       <div className="border-line bg-surface border-t px-4 py-4">
         <EntryDeck
           // Remounts (resetting weight/reps/warmup to fresh defaults) on

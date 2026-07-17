@@ -56,9 +56,9 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${plexSans.variable} ${plexMono.variable} dark h-full antialiased`}
+      className={`${plexSans.variable} ${plexMono.variable} dark h-dvh antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-dvh flex-col">
         {/* No props: locale + messages are inherited from the request config,
             so the whole catalog is available to Client Components too. */}
         <NextIntlClientProvider>
