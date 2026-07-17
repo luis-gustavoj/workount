@@ -2,6 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
+
+import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { PwaShell } from "@/components/pwa/pwa-shell";
+
 import "./globals.css";
 
 // DESIGN.md: IBM Plex Sans for interface text, IBM Plex Mono for every numeral.
@@ -21,12 +25,23 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Workount",
   description: "Track your training programs and log your sessions.",
+  // iOS Safari still doesn't fully read manifest.webmanifest (ticket 019):
+  // these are what actually make "Add to Home Screen" open standalone there.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Workount",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#070707", // DESIGN.md dark-theme --bg; the app is dark-only
 };
 
 export default async function RootLayout({
@@ -46,7 +61,11 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col">
         {/* No props: locale + messages are inherited from the request config,
             so the whole catalog is available to Client Components too. */}
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          {children}
+          <PwaShell />
+          <InstallPrompt />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

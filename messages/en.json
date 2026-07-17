@@ -6,6 +6,12 @@
     "error": "Sign-in didn’t complete. Please try again.",
     "passwordless": "Google is the only way in. We never see or store a password."
   },
+  "Pwa": {
+    "body": "Install Workount for a faster, offline-ready app.",
+    "iosInstructions": "Install Workount: tap Share, then \"Add to Home Screen\".",
+    "install": "Install",
+    "dismiss": "Dismiss"
+  },
   "Shell": {
     "signOut": "Sign out",
     "signedIn": "Signed in",

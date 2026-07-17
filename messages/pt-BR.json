@@ -6,6 +6,12 @@
     "error": "O login não foi concluído. Tente novamente.",
     "passwordless": "O Google é a única forma de entrar. Nunca vemos nem armazenamos sua senha."
   },
+  "Pwa": {
+    "body": "Instale o Workount para um app mais rápido e pronto para uso offline.",
+    "iosInstructions": "Instale o Workount: toque em Compartilhar e depois em \"Adicionar à Tela de Início\".",
+    "install": "Instalar",
+    "dismiss": "Dispensar"
+  },
   "Shell": {
     "signOut": "Sair",
     "signedIn": "Conectado",
