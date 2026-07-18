@@ -56,7 +56,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${plexSans.variable} ${plexMono.variable} dark min-h-dvh antialiased`}
+      className={`${plexSans.variable} ${plexMono.variable} dark max-h-dvh min-h-dvh antialiased`}
     >
       {/* `svh` (small viewport height), not `dvh`: this shell must never show
           a gap. `dvh` sizes for the browser chrome being hidden, so whenever
@@ -65,7 +65,7 @@ export default async function RootLayout({
           and a strip of the page's raw background shows through at the
           bottom. `svh` is the safe minimum — guaranteed to fit regardless of
           chrome state. */}
-      <body className="flex min-h-dvh flex-col overflow-hidden">
+      <body className="flex max-h-dvh min-h-dvh flex-col overflow-hidden">
         {/* No props: locale + messages are inherited from the request config,
             so the whole catalog is available to Client Components too. */}
         <NextIntlClientProvider>
