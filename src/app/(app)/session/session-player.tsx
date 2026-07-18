@@ -15,12 +15,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { buildFinishSummary, finishSession, type FinishSummary } from "@/lib/session/commit";
+import {
+  buildFinishSummary,
+  finishSession,
+  type FinishSummary,
+} from "@/lib/session/commit";
 import { requestRestNotificationPermission } from "@/lib/session/notify";
 import { workingSetCount } from "@/lib/session/player";
 import { createClient } from "@/lib/supabase/client";
 import { useSessionStore } from "@/lib/session/store";
-import type { DraftExercise, LastPerformanceSet, PerformedSet } from "@/lib/session/types";
+import type {
+  DraftExercise,
+  LastPerformanceSet,
+  PerformedSet,
+} from "@/lib/session/types";
 
 import { RestSheet } from "./rest-sheet";
 import { SetRow } from "./set-row";
@@ -33,7 +41,10 @@ type Translate = ReturnType<typeof useTranslations>;
 
 function formatTarget(t: Translate, exercise: DraftExercise): string {
   return exercise.repMin === exercise.repMax
-    ? t("targetLabelFixed", { sets: exercise.targetSets, reps: exercise.repMin })
+    ? t("targetLabelFixed", {
+        sets: exercise.targetSets,
+        reps: exercise.repMin,
+      })
     : t("targetLabel", {
         sets: exercise.targetSets,
         repMin: exercise.repMin,
@@ -48,8 +59,13 @@ function referenceForOrdinal(
   return lastPerformance[ordinal - 1] ?? null;
 }
 
-function formatLastTime(t: Translate, reference: LastPerformanceSet | null): string | null {
-  return reference ? t("lastTimeValue", { weight: reference.weight, reps: reference.reps }) : null;
+function formatLastTime(
+  t: Translate,
+  reference: LastPerformanceSet | null,
+): string | null {
+  return reference
+    ? t("lastTimeValue", { weight: reference.weight, reps: reference.reps })
+    : null;
 }
 
 /**
@@ -71,7 +87,10 @@ function workingOrdinals(sets: PerformedSet[]): (number | null)[] {
  * last-performance reference, falling back to whatever was logged most
  * recently, then a plain empty-bar start.
  */
-function defaultEntry(exercise: DraftExercise): { weight: number; reps: number } {
+function defaultEntry(exercise: DraftExercise): {
+  weight: number;
+  reps: number;
+} {
   const nextOrdinal = workingSetCount(exercise) + 1;
   const reference = referenceForOrdinal(exercise.lastPerformance, nextOrdinal);
   const lastLogged = exercise.sets[exercise.sets.length - 1];
@@ -105,8 +124,18 @@ function EntryDeck({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-        <Stepper label={t("weightLabel")} value={weight} step={WEIGHT_STEP} onChange={setWeight} />
-        <Stepper label={t("repsLabel")} value={reps} step={REPS_STEP} onChange={setReps} />
+        <Stepper
+          label={t("weightLabel")}
+          value={weight}
+          step={WEIGHT_STEP}
+          onChange={setWeight}
+        />
+        <Stepper
+          label={t("repsLabel")}
+          value={reps}
+          step={REPS_STEP}
+          onChange={setReps}
+        />
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -163,15 +192,15 @@ function BottomDock({
   const t = useTranslations("Session");
   return (
     <div
-      className="bg-surface pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+      className="bg-surface pb-[calc(env(safe-area-inset-bottom)+1rem)] select-none"
       style={{
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
       }}
     >
-      <div className="border-line bg-surface border-t px-4 py-4">
+      <div className="border-t border-line bg-surface px-4 py-4">
         {isEditing ? (
-          <p className="text-ink-muted flex h-14 items-center justify-center text-center text-sm">
+          <p className="flex h-14 items-center justify-center text-center text-sm text-ink-muted">
             {t("editingHint")}
           </p>
         ) : (
@@ -201,7 +230,12 @@ type FinishState =
   | { phase: "idle" }
   | { phase: "confirming"; summary: FinishSummary; completedAt: Date }
   | { phase: "committing"; summary: FinishSummary; completedAt: Date }
-  | { phase: "error"; summary: FinishSummary; completedAt: Date; message: string };
+  | {
+      phase: "error";
+      summary: FinishSummary;
+      completedAt: Date;
+      message: string;
+    };
 
 /**
  * The confirmation summary + retry banner (ticket 014, finish flow steps
@@ -234,35 +268,51 @@ function FinishDialog({
           <div>
             <dt className="text-ink-muted">{t("finishDuration")}</dt>
             <dd className="font-mono text-lg font-medium tabular-nums">
-              {t("finishDurationValue", { minutes: Math.round(state.summary.durationSeconds / 60) })}
+              {t("finishDurationValue", {
+                minutes: Math.round(state.summary.durationSeconds / 60),
+              })}
             </dd>
           </div>
           <div>
             <dt className="text-ink-muted">{t("finishVolume")}</dt>
             <dd className="font-mono text-lg font-medium tabular-nums">
-              {t("finishVolumeValue", { volume: Math.round(state.summary.totalVolumeKg) })}
+              {t("finishVolumeValue", {
+                volume: Math.round(state.summary.totalVolumeKg),
+              })}
             </dd>
           </div>
           <div>
             <dt className="text-ink-muted">{t("finishSets")}</dt>
-            <dd className="font-mono text-lg font-medium tabular-nums">{state.summary.setsCompleted}</dd>
+            <dd className="font-mono text-lg font-medium tabular-nums">
+              {state.summary.setsCompleted}
+            </dd>
           </div>
         </dl>
 
         {state.summary.prExerciseNames.length > 0 && (
-          <p className="bg-ok/10 text-ok rounded px-3 py-2 text-sm font-medium">
-            {t("finishPrBadge", { names: state.summary.prExerciseNames.join(", ") })}
+          <p className="rounded bg-ok/10 px-3 py-2 text-sm font-medium text-ok">
+            {t("finishPrBadge", {
+              names: state.summary.prExerciseNames.join(", "),
+            })}
           </p>
         )}
 
         {state.phase === "error" && (
-          <p role="alert" className="bg-danger/10 text-danger rounded px-3 py-2 text-sm">
+          <p
+            role="alert"
+            className="rounded bg-danger/10 px-3 py-2 text-sm text-danger"
+          >
             {state.message}
           </p>
         )}
 
         <DialogFooter>
-          <Button type="button" variant="outline" disabled={isCommitting} onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isCommitting}
+            onClick={onCancel}
+          >
             {t("finishCancel")}
           </Button>
           <Button type="button" disabled={isCommitting} onClick={onConfirm}>
@@ -299,7 +349,9 @@ export function SessionPlayer() {
   const updateSet = useSessionStore((s) => s.updateSet);
   const deleteSet = useSessionStore((s) => s.deleteSet);
   const goToExercise = useSessionStore((s) => s.goToExercise);
-  const [finishState, setFinishState] = useState<FinishState>({ phase: "idle" });
+  const [finishState, setFinishState] = useState<FinishState>({
+    phase: "idle",
+  });
   // Which logged set (by setNumber) is showing its edit surface, one row at
   // a time (ticket 023). Lives here, not in SetRow, so switching exercises
   // or logging/deleting a set can reliably close it — a stale setNumber
@@ -355,7 +407,11 @@ export function SessionPlayer() {
   function openFinish() {
     if (!draft) return;
     const completedAt = new Date();
-    setFinishState({ phase: "confirming", summary: buildFinishSummary(draft, completedAt), completedAt });
+    setFinishState({
+      phase: "confirming",
+      summary: buildFinishSummary(draft, completedAt),
+      completedAt,
+    });
   }
 
   async function confirmFinish() {
@@ -371,10 +427,16 @@ export function SessionPlayer() {
     // "Saving…" with no way for the user to retry.
     try {
       const supabase = createClient();
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
       const userId = userData?.user?.id;
       if (userError || !userId) {
-        setFinishState({ phase: "error", summary, completedAt, message: t("finishError") });
+        setFinishState({
+          phase: "error",
+          summary,
+          completedAt,
+          message: t("finishError"),
+        });
         return;
       }
 
@@ -386,24 +448,34 @@ export function SessionPlayer() {
       if (result.ok) {
         router.push(`/history/${result.sessionId}`);
       } else {
-        setFinishState({ phase: "error", summary, completedAt, message: t("finishError") });
+        setFinishState({
+          phase: "error",
+          summary,
+          completedAt,
+          message: t("finishError"),
+        });
       }
     } catch {
-      setFinishState({ phase: "error", summary, completedAt, message: t("finishError") });
+      setFinishState({
+        phase: "error",
+        summary,
+        completedAt,
+        message: t("finishError"),
+      });
     }
   }
 
   const exercise = draft ? draft.exercises[draft.activeExerciseIndex] : null;
 
   if (status === "loading") {
-    return <p className="text-ink-muted p-6 text-sm">{t("loading")}</p>;
+    return <p className="p-6 text-sm text-ink-muted">{t("loading")}</p>;
   }
 
   if (status === "empty" || !draft || !exercise) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
         <h1 className="text-[1.375rem] font-semibold">{t("emptyTitle")}</h1>
-        <p className="text-ink-muted text-sm">{t("emptyBody")}</p>
+        <p className="text-sm text-ink-muted">{t("emptyBody")}</p>
         <Button asChild size="sm">
           <Link href="/programs">{t("backToWorkouts")}</Link>
         </Button>
@@ -418,7 +490,10 @@ export function SessionPlayer() {
 
   const workingCount = workingSetCount(exercise);
   const nextOrdinal = workingCount + 1;
-  const nextReference = referenceForOrdinal(exercise.lastPerformance, nextOrdinal);
+  const nextReference = referenceForOrdinal(
+    exercise.lastPerformance,
+    nextOrdinal,
+  );
   const ordinals = workingOrdinals(exercise.sets);
 
   return (
@@ -426,11 +501,11 @@ export function SessionPlayer() {
       {/* Finish strip — a slim bar above the fixed three-band layout
           (DESIGN.md), so it never competes with the header's exercise
           name/position for attention. */}
-      <div className="border-line flex justify-end border-b px-4 py-2">
+      <div className="flex justify-end border-b border-line px-4 py-2">
         <button
           type="button"
           onClick={openFinish}
-          className="text-ink-muted h-11 px-2 text-sm font-medium underline underline-offset-2"
+          className="h-11 px-2 text-sm font-medium text-ink-muted underline underline-offset-2"
         >
           {t("finish")}
         </button>
@@ -445,23 +520,25 @@ export function SessionPlayer() {
       )}
 
       {/* Top band — static: name, position, prescription, notes. */}
-      <div className="border-line flex flex-col gap-2 border-b px-4 py-4">
+      <div className="flex flex-col gap-2 border-b border-line px-4 py-4">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             aria-label={t("previousExercise")}
             disabled={!canGoPrev}
             onClick={() => goTo(draft.activeExerciseIndex - 1)}
-            className="text-ink-muted grid size-11 shrink-0 place-items-center disabled:opacity-30"
+            className="grid size-11 shrink-0 place-items-center text-ink-muted disabled:opacity-30"
           >
             <ChevronLeft className="size-5" />
           </button>
           <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5 text-center">
-            <span className="text-ink-muted text-[0.6875rem] font-medium tracking-[0.06em] uppercase">
+            <span className="text-[0.6875rem] font-medium tracking-[0.06em] text-ink-muted uppercase">
               {t("exerciseProgress", { position, total })}
             </span>
-            <h1 className="text-[1.375rem] leading-tight font-semibold">{exercise.exerciseName}</h1>
-            <span className="text-ink-muted font-mono text-sm tabular-nums">
+            <h1 className="text-[1.375rem] leading-tight font-semibold">
+              {exercise.exerciseName}
+            </h1>
+            <span className="font-mono text-sm text-ink-muted tabular-nums">
               {formatTarget(t, exercise)}
             </span>
           </div>
@@ -470,19 +547,21 @@ export function SessionPlayer() {
             aria-label={t("nextExercise")}
             disabled={!canGoNext}
             onClick={() => goTo(draft.activeExerciseIndex + 1)}
-            className="text-ink-muted grid size-11 shrink-0 place-items-center disabled:opacity-30"
+            className="grid size-11 shrink-0 place-items-center text-ink-muted disabled:opacity-30"
           >
             <ChevronRight className="size-5" />
           </button>
         </div>
 
-        {exercise.notes && <p className="text-ink-muted text-center text-sm">{exercise.notes}</p>}
+        {exercise.notes && (
+          <p className="text-center text-sm text-ink-muted">{exercise.notes}</p>
+        )}
 
         {canGoNext && (
           <button
             type="button"
             onClick={() => goTo(draft.activeExerciseIndex + 1)}
-            className="text-ink-muted self-center text-sm underline underline-offset-2"
+            className="self-center text-sm text-ink-muted underline underline-offset-2"
           >
             {t("skipExercise")}
           </button>
@@ -506,16 +585,27 @@ export function SessionPlayer() {
               isWarmup={s.isWarmup}
               performed={{ weight: s.weight, reps: s.reps }}
               lastTimeText={
-                ordinal === null ? null : formatLastTime(t, referenceForOrdinal(exercise.lastPerformance, ordinal))
+                ordinal === null
+                  ? null
+                  : formatLastTime(
+                      t,
+                      referenceForOrdinal(exercise.lastPerformance, ordinal),
+                    )
               }
-              onToggleWarmup={() => void toggleWarmup(exercise.workoutExerciseId, s.setNumber)}
+              onToggleWarmup={() =>
+                void toggleWarmup(exercise.workoutExerciseId, s.setNumber)
+              }
               edit={{
                 setNumber: s.setNumber,
                 isEditing: editingSetNumber === s.setNumber,
                 onStart: () => setEditingSetNumber(s.setNumber),
                 onSave: (input) => {
                   setEditingSetNumber(null);
-                  void updateSet(exercise.workoutExerciseId, s.setNumber, input);
+                  void updateSet(
+                    exercise.workoutExerciseId,
+                    s.setNumber,
+                    input,
+                  );
                 },
                 onCancel: () => setEditingSetNumber(null),
                 onDelete: () => {
@@ -529,7 +619,9 @@ export function SessionPlayer() {
 
         <SetRow
           label={
-            workingCount >= exercise.targetSets ? t("extraSet") : t("setLabel", { number: nextOrdinal })
+            workingCount >= exercise.targetSets
+              ? t("extraSet")
+              : t("setLabel", { number: nextOrdinal })
           }
           isWarmup={false}
           lastTimeText={formatLastTime(t, nextReference)}
