@@ -1,4 +1,4 @@
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, LineChart } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -38,6 +38,7 @@ export default async function ProgramDetailPage({
   const { id } = parsed.data;
 
   const t = await getTranslations("Programs");
+  const tAnalytics = await getTranslations("Analytics");
   const supabase = await createClient();
   const {
     data: { user },
@@ -181,6 +182,17 @@ export default async function ProgramDetailPage({
             </Button>
           </form>
         </details>
+      </section>
+
+      {/* Analytics (ticket 018). Scoped to this program, per ADR-0004 — there
+          is no global cross-program dashboard, so this is the only door to it. */}
+      <section className="flex flex-col gap-3 border-t border-line pt-5">
+        <Button asChild variant="outline" className="self-start">
+          <Link href={`/programs/${program.id}/analytics`}>
+            <LineChart className="size-4" />
+            {tAnalytics("link")}
+          </Link>
+        </Button>
       </section>
 
       <section className="flex flex-col gap-3 border-t border-line pt-5">

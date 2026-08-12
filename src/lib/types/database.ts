@@ -376,6 +376,34 @@ export type Database = {
           },
         ]
       }
+      // Ticket 017, 0006_analytics.sql. Per (user, exercise), NOT per program:
+      // a PR is "a best, per exercise" (CONTEXT.md), so this view deliberately
+      // crosses programs where the charts do not.
+      v_exercise_prs: {
+        Row: {
+          user_id: string
+          exercise_id: string
+          heaviest_weight: number
+          heaviest_reps: number
+          heaviest_session_id: string
+          best_e1rm: number
+          best_e1rm_weight: number
+          best_e1rm_reps: number
+          best_e1rm_session_id: string
+          most_reps: number
+          most_reps_weight: number
+          most_reps_session_id: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_sets_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       commit_session: {
@@ -403,6 +431,44 @@ export type Database = {
         }
         Returns: {
           session_set_id: string
+        }[]
+      }
+      // The three analytics functions (ticket 017, 0006_analytics.sql). Every
+      // number below is already aggregated over WORKING sets only — nothing
+      // here is re-derived in JavaScript (ADR-0004).
+      get_program_volume: {
+        Args: {
+          p_program_id: string
+        }
+        Returns: {
+          session_id: string
+          completed_at: string
+          workout_name: string | null
+          total_volume: number
+        }[]
+      }
+      get_exercise_progression: {
+        Args: {
+          p_program_id: string
+          p_exercise_id: string
+        }
+        Returns: {
+          session_id: string
+          completed_at: string
+          top_set_weight: number
+          top_set_reps: number
+          best_e1rm: number
+        }[]
+      }
+      get_program_adherence: {
+        Args: {
+          p_program_id: string
+        }
+        Returns: {
+          week_start: string
+          completed_sessions: number
+          scheduled_workouts: number
+          adherence: number | null
         }[]
       }
     }
