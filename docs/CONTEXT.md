@@ -67,7 +67,7 @@ You *perform a session* **from** a *workout*. A workout is a noun you edit; a se
 
 **Volume** — `Σ(weight × reps)` across working sets. Warmups excluded. The headline "did I do more than last time" number.
 
-**Estimated 1RM (e1RM)** — the heaviest single you could theoretically lift, inferred from a set, via **Epley**: `weight × (1 + reps / 30)`. Lets you compare 100kg×5 against 110kg×3 (108.3 vs 121.0 — the triple was stronger). This is what a progression chart plots, *not* raw weight, because raw weight ignores reps and tells you nothing when the rep count moves.
+**Estimated 1RM (e1RM)** — the heaviest single you could theoretically lift, inferred from a set, via **Epley**: `weight × (1 + reps / 30)`. Lets you compare 100kg×5 against 110kg×3 (116.67 vs 121.0 — the triple was stronger). This is what a progression chart plots, *not* raw weight, because raw weight ignores reps and tells you nothing when the rep count moves.
 
 **PR (personal record)** — a best, per exercise. Three kinds, tracked separately: heaviest set, best e1RM, best reps at a given weight. Working sets only.
 

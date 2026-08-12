@@ -15,7 +15,9 @@
     "test:rls": "tsx scripts/test-rls.ts",
     "test:last-performance": "tsx scripts/test-last-performance.ts",
     "test:commit-session": "tsx scripts/test-commit-session.ts",
-    "test:history": "tsx scripts/test-history.ts"
+    "test:history": "tsx scripts/test-history.ts",
+    "test:analytics": "tsx scripts/test-analytics.ts",
+    "seed:synthetic": "tsx scripts/seed-synthetic.ts"
   },
   "dependencies": {
     "@dnd-kit/helpers": "^0.5.0",

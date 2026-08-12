@@ -147,10 +147,18 @@ The **only** write path for a finished session. Takes the whole session and all 
 
 Deep-copies program → workouts → workout_exercises under a new name. **Does not copy sessions** — history stays attached to the original ([ADR-0002](adr/0002-sessions-snapshot-their-prescription.md)). This is how a user iterates ("PPL v2") without blurring the analytics of what they already did.
 
+### The analytics functions
+
+All three are program-scoped ([ADR-0004](adr/0004-analytics-are-scoped-to-a-program.md)), `SECURITY INVOKER`, and count **working sets only**. A borrowed `program_id` returns zero rows — RLS, not an app-level check.
+
+- `get_program_volume(p_program_id) → …` — volume per **completed** session, chronological. A projection of `v_session_summary`, so /history and the chart cannot disagree. A session of nothing but warmups appears with volume 0 rather than vanishing.
+- `get_exercise_progression(p_program_id, p_exercise_id) → …` — per completed session: the top set (weight × reps) and the best e1RM, which are frequently different sets. Chronological.
+- `get_program_adherence(p_program_id) → …` — completed sessions vs scheduled workouts, per ISO week, contiguous so a skipped week is a zero rather than a missing row. Workouts with no `day_of_week` are not obligations and stay out of the denominator. Not capped at 1.0. The denominator is the program's *current* workout count, applied to every past week — workouts are mutable and keep no history, so editing a program rewrites its past adherence.
+
 ### Views
 
 - `v_session_summary` — per session: duration, total volume, set count, exercise count.
-- `v_exercise_prs` — per (user, exercise): heaviest set, best e1RM, best reps-at-weight, each with the `session_id` it happened in.
+- `v_exercise_prs` — per (user, exercise): heaviest set, best e1RM, best reps-at-weight, each with the `session_id` it happened in. Keyed by exercise rather than by program, as `get_session_prs` already is — the reps kind is implemented as *most reps in a working set*, not a per-weight breakdown, because a per-weight breakdown does not fit one row per exercise.
 
 ---
 
