@@ -5,8 +5,8 @@ import type { HomeWorkout } from "./resolve";
 
 const NOW = Date.parse("2026-07-16T18:00:00.000Z"); // Thursday, local UTC for this test
 
-const pushA: HomeWorkout = { id: "w-push-a", name: "Push A", dayOfWeek: 4 };
-const legsA: HomeWorkout = { id: "w-legs-a", name: "Legs A", dayOfWeek: 1 };
+const pushA: HomeWorkout = { id: "w-push-a", name: "Push A", dayOfWeek: 4 , exerciseCount: 4 };
+const legsA: HomeWorkout = { id: "w-legs-a", name: "Legs A", dayOfWeek: 1 , exerciseCount: 4 };
 
 describe("buildResolveHomeInput", () => {
   it("marks a workout completed today when its session's completedAt falls on today's calendar day", () => {

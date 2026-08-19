@@ -13,14 +13,18 @@
     "dismiss": "Dispensar"
   },
   "Shell": {
-    "signOut": "Sair",
-    "signedIn": "Conectado",
+    "primaryNav": "Principal",
+    "home": "Início",
+    "programs": "Programas",
+    "history": "Histórico",
     "settings": "Configurações"
   },
   "Settings": {
     "title": "Configurações",
     "language": "Idioma",
-    "languageDescription": "O idioma em que o app é exibido."
+    "languageDescription": "O idioma em que o app é exibido.",
+    "account": "Conta",
+    "signOut": "Sair"
   },
   "Programs": {
     "title": "Programas",
@@ -136,7 +140,6 @@
     "other": "Outro"
   },
   "Home": {
-    "loading": "Carregando…",
     "noProgramTitle": "Nenhum programa ativo",
     "noProgramBody": "Crie um programa para receber uma recomendação aqui toda vez que abrir o app.",
     "noProgramCta": "Criar um programa",
@@ -147,6 +150,11 @@
     "discard": "Descartar",
     "todayTitle": "Hoje: {name}",
     "startWorkout": "Iniciar treino",
+    "viewPlan": "Ver plano",
+    "starting": "Iniciando…",
+    "startError": "Não foi possível iniciar a sessão. Verifique sua conexão e tente novamente.",
+    "noExercises": "Nenhum exercício ainda.",
+    "addExercises": "Adicionar exercícios",
     "restTitle": "Dia de descanso",
     "restDoneToday": "{names} concluído hoje ✓",
     "restNext": "Próximo: {name}",

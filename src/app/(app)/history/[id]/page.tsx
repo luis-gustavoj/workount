@@ -10,6 +10,7 @@ import {
 } from "@/lib/history/format";
 import { getSessionDetail } from "@/lib/history/query";
 import { sessionIdSchema } from "@/lib/validation/history";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,9 +47,7 @@ export default async function HistoryDetailPage({
   const t = await getTranslations("History");
   const locale = await getLocale();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
   const detail = await getSessionDetail(supabase, id);

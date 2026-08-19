@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+import { profileFromUser } from "@/lib/auth/profile";
 import {
   asLocale,
   localeFromAcceptLanguage,
@@ -16,12 +17,43 @@ import type { Database } from "@/lib/types/database";
  * The OAuth callback. Google redirects here with a `code`; we exchange it for a
  * session (which `createClient` writes to the auth cookies) and send the user
  * into the app. Their `profiles` row is created by the `handle_new_user`
- * trigger (migration 0002) as a side effect of the auth.users insert, and the
- * (app) layout self-heals it if the trigger ever fails.
+ * trigger (migration 0002) as a side effect of the auth.users insert, and
+ * `ensureProfile` below self-heals it if the trigger ever fails.
  *
  * This route must stay reachable while signed out — it is allowlisted under
  * `/auth` in isPublicPath.
  */
+
+/**
+ * Self-heal a missing `profiles` row (ticket 005).
+ *
+ * The `handle_new_user` trigger (migration 0002) is the normal way a profile is
+ * born, but "triggers are the kind of thing that works in dev and surprises you
+ * once", so a signed-in user with no row must be repaired rather than shown a
+ * crash.
+ *
+ * This used to live in the (app) layout, which meant paying a `profiles` SELECT
+ * on *every* navigation to check for a row that is essentially always there.
+ * Sign-in is the moment a profile can actually be missing, so the repair
+ * belongs here — once per session instead of once per screen.
+ *
+ * `ignoreDuplicates` so a race with the trigger (or a second tab) is a no-op
+ * rather than a unique violation. RLS permits this insert: the profiles policy
+ * allows `id = auth.uid()`, and the session cookies were just written, so we
+ * are that user.
+ */
+async function ensureProfile(
+  supabase: SupabaseClient<Database>,
+  user: User,
+  acceptLanguage: string | null,
+): Promise<void> {
+  await supabase
+    .from("profiles")
+    .upsert(profileFromUser(user, acceptLanguage), {
+      onConflict: "id",
+      ignoreDuplicates: true,
+    });
+}
 
 /**
  * Resolve the locale to render this user in, and keep `profiles.locale` honest
@@ -86,10 +118,13 @@ export async function GET(request: Request) {
   // language. The session cookies were just written by exchangeCodeForSession,
   // so this profiles write runs authenticated and RLS-clean (id = auth.uid()).
   if (data.user) {
+    const acceptLanguage = request.headers.get("accept-language");
+    // Before anything reads the row: repair it if the trigger missed.
+    await ensureProfile(supabase, data.user, acceptLanguage);
     const locale = await resolveSignInLocale(
       supabase,
       data.user,
-      request.headers.get("accept-language"),
+      acceptLanguage,
     );
     response.cookies.set(LOCALE_COOKIE, locale, LOCALE_COOKIE_OPTIONS);
   }

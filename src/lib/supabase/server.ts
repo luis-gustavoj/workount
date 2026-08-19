@@ -29,7 +29,7 @@ export async function createClient() {
             );
           } catch {
             // `setAll` was called from a Server Component, where the cookie
-            // store is read-only. This is safe to ignore: the middleware
+            // store is read-only. This is safe to ignore: the proxy
             // (`updateSession`) refreshes the session on every request, so the
             // refreshed cookies are still written there.
           }

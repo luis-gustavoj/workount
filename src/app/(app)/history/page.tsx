@@ -10,6 +10,7 @@ import {
   type RelativeHint,
 } from "@/lib/history/format";
 import { HISTORY_PAGE_SIZE, getHistoryList } from "@/lib/history/query";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,9 +39,7 @@ export default async function HistoryPage({
   const t = await getTranslations("History");
   const locale = await getLocale();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
   const { sessions, hasMore } = await getHistoryList(supabase, {

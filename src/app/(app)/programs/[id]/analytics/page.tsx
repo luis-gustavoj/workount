@@ -16,6 +16,7 @@ import {
   getProgramVolume,
   listProgramExercises,
 } from "@/lib/analytics/query";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { analyticsSearchSchema } from "@/lib/validation/analytics";
 import { programIdSchema } from "@/lib/validation/program";
@@ -55,9 +56,7 @@ export default async function AnalyticsPage({
 
   const t = await getTranslations("Analytics");
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
   const [{ data: program }, exercises, volume, adherence] = await Promise.all([

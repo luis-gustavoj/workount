@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
 import type { Database } from "@/lib/types/database";
 
@@ -25,56 +26,56 @@ export type HomeData = {
 const RECENT_SESSIONS_LIMIT = 30;
 
 /**
- * Everything the home screen needs from the server (ticket 015) besides the
- * draft, which lives client-side in IndexedDB (ADR-0001) and is read
- * separately. Returns the "no active program" shape rather than throwing —
- * that's a real state (SPEC.md §4), not an error.
+ * The shape `get_home_data` (0007) promises. The RPC's declared return type is
+ * `Json`, so this is the boundary where that becomes a real type — parsed, not
+ * cast. CLAUDE.md puts Zod at every boundary where unvalidated data would
+ * otherwise reach the app; a jsonb document from a function is exactly that,
+ * and a silently-renamed key would otherwise surface as `undefined` deep
+ * inside the resolver rather than as an error here.
+ */
+const homeDataSchema = z.object({
+  activeProgramId: z.uuid().nullable(),
+  workouts: z.array(
+    z.object({
+      id: z.uuid(),
+      name: z.string(),
+      dayOfWeek: z.number().int().min(0).max(6).nullable(),
+      exerciseCount: z.number().int().nonnegative(),
+    }),
+  ),
+  recentSessions: z.array(
+    z.object({
+      id: z.uuid(),
+      workoutId: z.uuid().nullable(),
+      workoutName: z.string().nullable(),
+      completedAt: z.string(),
+      durationSeconds: z.number().nullable(),
+    }),
+  ),
+});
+
+/**
+ * Everything the home screen needs from the server (tickets 015, 024) besides
+ * the draft, which lives client-side in IndexedDB (ADR-0001) and is read
+ * separately.
+ *
+ * **One round trip.** This used to be a `profiles` query followed by workouts
+ * and sessions — a waterfall, because both of those need
+ * `active_program_id` before they can start. Two sequential round trips on the
+ * landing screen. `get_home_data` (0007) does the whole thing in Postgres,
+ * where the join is free, and returns the exercise counts Home now needs to
+ * tell a startable workout from an empty one.
+ *
+ * Returns the "no active program" shape rather than throwing — that is a real
+ * state (SPEC.md §4), not an error.
  */
 export async function getHomeData(
   supabase: SupabaseClient<Database>,
-  userId: string,
 ): Promise<HomeData> {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("active_program_id")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("get_home_data", {
+    p_recent_session_limit: RECENT_SESSIONS_LIMIT,
+  });
+  if (error) throw error;
 
-  const activeProgramId = profile?.active_program_id ?? null;
-  if (!activeProgramId) {
-    return { activeProgramId: null, workouts: [], recentSessions: [] };
-  }
-
-  const [{ data: workouts }, { data: sessions }] = await Promise.all([
-    supabase
-      .from("workouts")
-      .select("id, name, day_of_week")
-      .eq("program_id", activeProgramId)
-      .order("position"),
-    supabase
-      .from("sessions")
-      .select("id, workout_id, completed_at, duration_seconds, workout:workouts(name)")
-      .eq("program_id", activeProgramId)
-      .eq("status", "completed")
-      .order("completed_at", { ascending: false })
-      .limit(RECENT_SESSIONS_LIMIT),
-  ]);
-
-  return {
-    activeProgramId,
-    workouts: (workouts ?? []).map((w) => ({
-      id: w.id,
-      name: w.name,
-      dayOfWeek: w.day_of_week,
-    })),
-    recentSessions: (sessions ?? [])
-      .filter((s) => s.completed_at !== null)
-      .map((s) => ({
-        id: s.id,
-        workoutId: s.workout_id,
-        workoutName: s.workout?.name ?? null,
-        completedAt: s.completed_at as string,
-        durationSeconds: s.duration_seconds,
-      })),
-  };
+  return homeDataSchema.parse(data);
 }

@@ -12,6 +12,7 @@ import {
 } from "@/app/(app)/programs/actions";
 import { WorkoutList } from "@/app/(app)/programs/[id]/workouts/workout-list";
 import { ProgramFields } from "@/app/(app)/programs/program-fields";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,9 +41,7 @@ export default async function ProgramDetailPage({
   const t = await getTranslations("Programs");
   const tAnalytics = await getTranslations("Analytics");
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
   const [{ data: program }, { data: profile }, { data: workouts }] =

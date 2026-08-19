@@ -19,7 +19,7 @@ Read [CONTEXT.md](CONTEXT.md) first — it defines every term used below. In par
 | Framework | Next.js (App Router, TypeScript), `src/` layout |
 | Styling | Tailwind + shadcn/ui |
 | Data | Supabase Postgres, RLS on every table |
-| Auth | Supabase Auth, Google OAuth only |
+| Auth | Supabase Auth, Google OAuth only. Route guard in `src/proxy.ts` (Next 16's replacement for `middleware`); the server reads the user via `getCurrentUser()`, which verifies the JWT locally ([ADR-0006](adr/0006-local-jwt-verification.md)) |
 | Client state | Zustand, persisted to IndexedDB via `idb-keyval` |
 | Charts | Recharts |
 | Validation | Zod, at every Server Action boundary |
@@ -143,6 +143,14 @@ Note the per-exercise independence: if you skipped bench last week but did it th
 
 The **only** write path for a finished session. Takes the whole session and all its sets, inserts them **in one transaction**, and **upserts on the client-generated `sessions.id`** so a retry after a flaky response cannot double-write. Rejects a payload whose `user_id` isn't `auth.uid()`. `SECURITY INVOKER` so RLS still applies.
 
+### `get_home_data(p_recent_session_limit int default 30) → jsonb`
+
+Everything the home screen needs in **one** round trip: the active program id, its workouts (with `exerciseCount` per workout), and the recent completed sessions. Replaces a JavaScript waterfall — the workouts and sessions queries both needed `profiles.active_program_id` first, so they could not start until it came back.
+
+`exerciseCount` comes from a **left** join, so a workout with no exercises still appears. That is the case it exists for: Home offers *Add exercises* rather than a Start that drops the user into an empty player.
+
+Returns one jsonb document rather than a row set — three differently-shaped results do not flatten into one row-type without either three functions (three round trips, defeating the point) or a wide sparse table. Validated with Zod at the boundary in `lib/home/query.ts`.
+
 ### `duplicate_program(p_program_id uuid, p_new_name text) → uuid`
 
 Deep-copies program → workouts → workout_exercises under a new name. **Does not copy sessions** — history stays attached to the original ([ADR-0002](adr/0002-sessions-snapshot-their-prescription.md)). This is how a user iterates ("PPL v2") without blurring the analytics of what they already did.
@@ -164,17 +172,27 @@ All three are program-scoped ([ADR-0004](adr/0004-analytics-are-scoped-to-a-prog
 
 ## 4. Screens
 
+### The shell
+
+Every signed-in screen renders inside the `(app)` layout, which is **navigation only**: a **bottom tab bar** — Home · Programs · History · Settings — and nothing else. There is no top header. The phone is held one-handed in a gym, where the thumb reaches the bottom of the screen and not the top; identity and sign-out live on Settings, where you go looking for them, rather than costing vertical space on every screen to show you your own name.
+
+The bar is hidden on `/session`: the player owns the bottom of the screen with its fixed entry deck, and a stray tap mid-set must not walk out of a session. Anything else anchored to the bottom of the viewport (the PWA install prompt) offsets itself above the bar — see `hasTabBar` in `src/lib/nav/routes.ts`, which is the single source of truth for both.
+
+The shell makes **zero queries per navigation**: the auth guard reads locally-verified, request-cached claims ([ADR-0006](adr/0006-local-jwt-verification.md)), and every route carries a `loading.tsx` skeleton so a tap paints immediately instead of waiting on the server.
+
 ### `/` — Home
 
 The default screen, and the one the user sees most. It answers exactly one question: **"what do I do right now?"** Resolved in strict priority order:
 
 1. **A draft exists in IndexedDB** → *"Session in progress — 34 min"*, primary action **Resume**. Nothing else competes for attention.
-2. **The active program has a workout for today's `day_of_week`, and no `completed` session for it today** → *"Today: Push A"*, with the exercise list previewed, primary action **Start workout**.
+2. **The active program has a workout for today's `day_of_week`, and no `completed` session for it today** → *"Today: Push A"*, primary action **Start workout** — which **starts the session and goes to the player**, not to the builder. It owns a pending state and an inline error, since the bundle fetch is a real round trip; a secondary **View plan** link still reaches the builder. A workout with **zero exercises** offers **Add exercises** instead, because starting one lands in a player whose empty state claims no session is in progress.
 3. **Otherwise** → *"Rest day"*, showing the next scheduled workout, plus a secondary **Start any workout** escape hatch (people train off-schedule constantly; do not force them to lie to the app).
 
 Below the fold: current streak, and the last 3 sessions.
 
 **Edge case that must be handled:** no active program at all (new user) → an empty state pointing at program creation, not a blank screen.
+
+Home fetches its server half with a single `get_home_data` call and renders it immediately; only the resume card waits on the IndexedDB draft read. Until that read lands the Start button is disabled — otherwise a fast tap could clobber a session already in progress.
 
 ### `/programs` · `/programs/new` · `/programs/[id]`
 

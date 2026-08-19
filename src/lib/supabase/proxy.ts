@@ -1,31 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * Paths an unauthenticated visitor is allowed to reach. Everything else in the
- * app requires a session and is redirected to `/sign-in`.
- *
- * - `/sign-in` — the one-button Google sign-in screen (ADR-0003).
- * - `/auth` — the OAuth callback (`/auth/callback`) that exchanges the code for
- *   a session; it must be reachable while still signed out.
- */
-const PUBLIC_PATHS = ["/sign-in", "/auth"];
-
-/**
- * Whether an unauthenticated request to `pathname` is allowed through. A path
- * is public if it exactly equals a public path or sits under it (`/auth` also
- * covers `/auth/callback`). The trailing-slash boundary is deliberate: it stops
- * `/sign-in-later` from matching `/sign-in`.
- */
-export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(
-    (base) => pathname === base || pathname.startsWith(`${base}/`),
-  );
-}
+import { userFromClaims } from "@/lib/auth/claims";
+import { isPublicPath } from "@/lib/nav/routes";
 
 /**
  * Refreshes the Supabase auth session on every request and guards protected
- * routes. Called from `src/middleware.ts`.
+ * routes. Called from `src/proxy.ts` (Next 16 renamed the `middleware` file
+ * convention to `proxy`; the old name still builds but logs a deprecation).
  *
  * The cookie handling here is load-bearing and easy to break invisibly:
  *
@@ -37,9 +19,14 @@ export function isPublicPath(pathname: string): boolean {
  *    a freshly constructed `NextResponse` instead would drop the refreshed auth
  *    cookies and silently log users out mid-session.
  *
- * Do not insert logic between `createServerClient` and `getUser()`: `getUser`
- * is what actually revalidates the token, and anything racing it can desync the
- * session.
+ * Do not insert logic between `createServerClient` and `getClaims()`: that call
+ * is what reads — and, when expired, refreshes — the session, and anything
+ * racing it can desync cookies.
+ *
+ * `getClaims()` rather than `getUser()` is ADR-0006: it verifies the token's
+ * ES256 signature locally instead of spending a network round trip per request
+ * to be told what the token already says. The refresh behaviour is unchanged —
+ * `getClaims()` reads the session underneath, which is where refresh lives.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -65,10 +52,9 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: no code between createServerClient and getUser().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: no code between createServerClient and getClaims().
+  const { data } = await supabase.auth.getClaims();
+  const user = userFromClaims(data?.claims);
 
   if (!user && !isPublicPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();

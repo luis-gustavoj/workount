@@ -16,6 +16,7 @@
     "test:last-performance": "tsx scripts/test-last-performance.ts",
     "test:commit-session": "tsx scripts/test-commit-session.ts",
     "test:history": "tsx scripts/test-history.ts",
+    "test:home-data": "tsx scripts/test-home-data.ts",
     "test:analytics": "tsx scripts/test-analytics.ts",
     "seed:synthetic": "tsx scripts/seed-synthetic.ts"
   },

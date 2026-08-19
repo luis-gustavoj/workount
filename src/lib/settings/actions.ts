@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { LOCALE_COOKIE, LOCALE_COOKIE_OPTIONS, LOCALES } from "@/lib/i18n/locales";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 
 // Zod at the boundary (CLAUDE.md): only a known locale reaches the database.
@@ -24,9 +25,7 @@ export async function setLocale(formData: FormData) {
   const { locale } = setLocaleSchema.parse({ locale: formData.get("locale") });
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error("Not authenticated");
 
   const { error } = await supabase
