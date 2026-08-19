@@ -14,7 +14,7 @@ export default async function SignInPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const user = await getCurrentUser();
-  if (user) redirect("/");
+  if (user) redirect("/home");
 
   const t = await getTranslations("SignIn");
   const { error } = await searchParams;

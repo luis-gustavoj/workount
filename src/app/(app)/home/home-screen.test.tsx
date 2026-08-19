@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import en from "../../../messages/en.json";
+import en from "../../../../messages/en.json";
 import { HomeScreen } from "./home-screen";
 import type { HomeData } from "@/lib/home/query";
 import { startSession } from "@/lib/session/start";
@@ -11,7 +11,7 @@ import { startSession } from "@/lib/session/start";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
-  usePathname: () => "/",
+  usePathname: () => "/home",
 }));
 
 const idbGet = vi.fn();

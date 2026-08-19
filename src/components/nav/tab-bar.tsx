@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { hasTabBar, isTabActive, TABS } from "@/lib/nav/routes";
 
 const ICONS = {
-  "/": House,
+  "/home": House,
   "/programs": Dumbbell,
   "/history": Clock,
   "/settings": Settings,

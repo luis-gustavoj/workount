@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { HomeScreen } from "./home-screen";
 
 /**
- * `/` — home (tickets 015 / 024, SPEC.md §4). Fetches everything server-side
+ * `/home` — home (tickets 015 / 024 / 025, SPEC.md §4). It moved off `/` when
+ * the landing page took the bare domain (ADR-0007). Fetches everything server-side
  * in one round trip except the draft, which only exists in the browser's
  * IndexedDB (ADR-0001) — that half of `resolveHome`'s input is read inside
  * `HomeScreen` itself.

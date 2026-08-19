@@ -6,6 +6,99 @@
     "error": "O login não deu certo. Tente novamente.",
     "passwordless": "O Google é a única forma de entrar. Nunca vemos nem armazenamos sua senha."
   },
+  "Landing": {
+    "skipToContent": "Pular para o conteúdo",
+    "nav": {
+      "label": "Seções da página",
+      "benefits": "O que ele faz",
+      "howItWorks": "Como funciona",
+      "faq": "Perguntas"
+    },
+    "hero": {
+      "titleTop": "Veja quanto você levantou da última vez.",
+      "titleBottom": "E supere.",
+      "body": "Um diário para quem segue um programa escrito. Cada série que você já fez fica ao lado da série que você vai fazer agora — e tudo isso funciona sem rede.",
+      "secondaryCta": "Veja como funciona",
+      "reassurance": "Grátis. O Google é a única forma de entrar; nunca vemos nem armazenamos sua senha."
+    },
+    "mock": {
+      "alt": "O executor de sessão: séries de supino registradas uma a uma, cada uma ao lado do que foi levantado da última vez, com o descanso correndo.",
+      "workout": "Push A",
+      "exercise": "Barbell Bench Press",
+      "target": "4 × 6–8"
+    },
+    "benefits": {
+      "title": "O que ele faz, na prática",
+      "networkTitle": "A rede é opcional",
+      "networkBody": "O executor carrega tudo de que precisa quando você começa e salva uma única vez quando você termina. No meio, ele nunca toca no wi-fi — academia no subsolo é só academia.",
+      "lastTimeTitle": "A última vez, ao lado de cada série",
+      "lastTimeBody": "80 × 8, bem do lado da série que você vai fazer agora.",
+      "warmupsTitle": "Aquecimento nunca conta",
+      "warmupsBody": "Fora do volume, do 1RM estimado e de todo recorde. A primeira semana não anuncia recorde que você não fez.",
+      "timerTitle": "Um descanso que sobrevive à tela bloqueada",
+      "timerBody": "Ele guarda a hora em que o descanso acaba, não quanto falta. Continua certo quando você desbloqueia o celular.",
+      "numbersTitle": "Números, por programa",
+      "numbersBody": "Volume, 1RM estimado, recordes, adesão — do bloco que você está fazendo.",
+      "separationTitle": "O plano e o treino nunca se misturam",
+      "separationBody": "Seu programa é o que você pretende fazer. Suas sessões são o que aconteceu. Editar o plano do mês que vem nunca reescreve o treino do mês passado."
+    },
+    "how": {
+      "title": "Para começar",
+      "step1Title": "Escreva seu programa",
+      "step1Body": "Dias, exercícios, séries alvo, faixas de repetição, descanso. Uma vez só — leva uns dez minutos. Bi-sets e descanso por exercício estão lá, se você usar.",
+      "step2Title": "Siga o programa",
+      "step2Body": "A tela inicial diz o que treinar hoje e se você já treinou. Um toque começa a sessão.",
+      "step3Title": "Treine e registre na hora",
+      "step3Body": "Com sinal ou sem. Da sua segunda sessão de um programa em diante, cada série carrega o que você fez da última vez."
+    },
+    "faq": {
+      "title": "Perguntas",
+      "q1": "É grátis?",
+      "a1": "É. Sem anúncios, sem assinatura, sem plano pago.",
+      "q2": "Por que só dá para entrar com o Google?",
+      "a2": "Assim não existe senha para guardarmos, vazarmos ou pedirmos que você redefina — nunca vemos nenhuma. Também deu para construir o app em vez de um formulário de cadastro e uma pilha de e-mails de recuperação.",
+      "q3": "Funciona mesmo sem sinal?",
+      "a3": "Funciona. Começar uma sessão carrega tudo de que ela precisa — seu plano e o que você levantou da última vez — e terminar salva uma vez só. Nada no meio precisa de conexão. Feche o navegador no meio do treino e você reabre exatamente onde parou.",
+      "q4": "Existe app na App Store?",
+      "a4": "Não. É um app web que você adiciona à tela de início, onde ele abre sozinho como qualquer outro app — sem loja, sem aviso de atualização.",
+      "q5": "kg ou lb?",
+      "a5": "Os dois. É uma preferência de exibição; os pesos são armazenados em quilos e convertidos para você.",
+      "q6": "Ele registra corrida ou cardio?",
+      "a6": "Não. Só treino de força — programas, séries, repetições e carga. Se você quer um app para tudo, não é este."
+    },
+    "cta": {
+      "title": "Comece sua primeira sessão",
+      "body": "Dez minutos para escrever seu programa. Depois disso é um toque para começar e um toque por série."
+    },
+    "footer": {
+      "label": "Rodapé",
+      "privacy": "Privacidade",
+      "source": "Código",
+      "rights": "© {year} Workount"
+    }
+  },
+  "Privacy": {
+    "title": "Privacidade",
+    "updated": "Atualizado em 19 de agosto de 2026",
+    "intro": "O Workount guarda o que você treina e quase nada além disso. Esta página diz exatamente o que isso significa, na ordem em que as perguntas realmente aparecem.",
+    "s1Title": "O que o Google nos conta",
+    "s1Body": "Entrar com o Google nos dá seu e-mail, seu nome e sua foto de perfil. É essa a entrega inteira. Nunca recebemos sua senha — o Google não compartilha, e não teríamos onde guardar. O Google é a única forma de entrar (não existe opção de e-mail e senha para recorrer).",
+    "s2Title": "O que guardamos",
+    "s2Body": "Seu perfil — o nome, o e-mail e a foto acima, mais seu idioma e se você lê os pesos em quilos ou libras. E seu treino: os programas que você monta, as sessões que você registra, cada série com peso, repetições e se era aquecimento. Nada além disso. Não rastreamos sua localização, seus contatos, seu aparelho, nem nada que você faça fora deste app.",
+    "s3Title": "Quem pode ver",
+    "s3Body": "Só você. Toda tabela aplica row-level security no próprio banco, atrelada à sua conta, então a restrição não depende de o app fazer a pergunta certa. Não vendemos dados, não compartilhamos com anunciantes, e não existe publicidade nenhuma no Workount.",
+    "s4Title": "Onde isso fica",
+    "s4Body": "Em um banco Postgres hospedado pela Supabase, servido pela Vercel. As duas são operadoras agindo em nosso nome; as duas podem armazenar dados fora do seu país. Sessões que você ainda não terminou também ficam no armazenamento do seu próprio navegador, no seu aparelho — é isso que permite o app funcionar sem sinal.",
+    "s5Title": "A página inicial",
+    "s5Body": "As páginas públicas — esta e a página inicial — contam visitas com o Vercel Web Analytics. Ele não usa cookies e não monta um perfil seu: registra que uma página foi vista, mais ou menos de onde, e em que tipo de aparelho. Ele não roda em lugar nenhum dentro do app.",
+    "s6Title": "Como apagar",
+    "s6Body": "Escreva para a gente e apagamos sua conta e tudo que está ligado a ela. Não arquivamos — apagamos. Peça uma cópia dos seus dados antes e você recebe.",
+    "s7Title": "Seus direitos",
+    "s7Body": "Pela LGPD no Brasil e pelo GDPR na Europa, você pode perguntar o que guardamos sobre você, pedir uma cópia, pedir correções e pedir a exclusão. O endereço abaixo serve para qualquer uma dessas coisas, e chega a uma pessoa.",
+    "contactTitle": "Contato",
+    "contactBody": "Escreva para {email}.",
+    "back": "Voltar para a página inicial"
+  },
   "Pwa": {
     "body": "Instale o Workount. Ele abre mais rápido e continua funcionando sem sinal.",
     "iosInstructions": "Instale o Workount: toque em Compartilhar e depois em \"Adicionar à Tela de Início\".",

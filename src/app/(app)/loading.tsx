@@ -1,7 +1,7 @@
 import { Skeleton, SkeletonCard, SkeletonPage } from "@/components/ui/skeleton";
 
 /**
- * Loading shell for `/` — home.
+ * Loading shell for `/home`.
  *
  * This also serves as the fallback boundary for any `(app)` route that hasn't
  * declared its own, so it deliberately stays generic: a card with an action,

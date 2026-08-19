@@ -8,11 +8,11 @@ const SHELL_CACHE = "workount-shell-v1";
 const RUNTIME_CACHE = "workount-runtime-v1";
 const CURRENT_CACHES = [SHELL_CACHE, RUNTIME_CACHE];
 
-// The two routes the ticket names by name: "/" and "/session" must load with
+// The two routes the ticket names by name: "/home" and "/session" must load with
 // no network. Precached into RUNTIME_CACHE (the same cache navigations read
 // from) so a cold, offline launch works even before either route has ever
 // been visited — not just after the fact, once the runtime cache warms up.
-const APP_SHELL_URLS = ["/", "/session"];
+const APP_SHELL_URLS = ["/home", "/session"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

@@ -6,6 +6,99 @@
     "error": "Sign-in didn’t go through. Try again.",
     "passwordless": "Google is the only way in. We never see or store a password."
   },
+  "Landing": {
+    "skipToContent": "Skip to content",
+    "nav": {
+      "label": "Page sections",
+      "benefits": "What it does",
+      "howItWorks": "How it works",
+      "faq": "Questions"
+    },
+    "hero": {
+      "titleTop": "See what you lifted last time.",
+      "titleBottom": "Then beat it.",
+      "body": "A logbook for people who follow a written program. Every set you’ve done sits next to every set you’re about to do — and all of it works with the network off.",
+      "secondaryCta": "See how it works",
+      "reassurance": "Free. Google is the only way in; we never see or store a password."
+    },
+    "mock": {
+      "alt": "The session player: sets of bench press logged one by one, each beside what was lifted last time, with the rest timer running.",
+      "workout": "Push A",
+      "exercise": "Barbell Bench Press",
+      "target": "4 × 6–8"
+    },
+    "benefits": {
+      "title": "What it actually does",
+      "networkTitle": "The network is optional",
+      "networkBody": "The player loads everything it needs when you start, and saves once when you finish. In between it never touches wifi — so a basement gym is just a gym.",
+      "lastTimeTitle": "Last time, beside every set",
+      "lastTimeBody": "80 × 8, right next to the set you’re about to do.",
+      "warmupsTitle": "Warmups never count",
+      "warmupsBody": "Excluded from volume, e1RM and every PR. Week one doesn’t report records you didn’t set.",
+      "timerTitle": "A timer that survives a locked screen",
+      "timerBody": "It stores when rest ends, not how long is left. Still right when you unlock the phone.",
+      "numbersTitle": "Numbers, per program",
+      "numbersBody": "Volume, estimated 1RM, PRs, adherence — for the block you’re running.",
+      "separationTitle": "The plan and the performance never touch",
+      "separationBody": "Your program is what you intend to do. Your sessions are what happened. Editing next month’s plan can never rewrite last month’s training."
+    },
+    "how": {
+      "title": "Getting started",
+      "step1Title": "Type in your program",
+      "step1Body": "Days, exercises, target sets, rep ranges, rest. Once — it takes about ten minutes. Supersets and per-exercise rest overrides are there if you use them.",
+      "step2Title": "Follow it",
+      "step2Body": "Home tells you what to train today, and whether you’ve already done it. One tap starts the session.",
+      "step3Title": "Train, and log as you go",
+      "step3Body": "Signal or no signal. From your second session of a program onward, every set carries what you did last time."
+    },
+    "faq": {
+      "title": "Questions",
+      "q1": "Is it free?",
+      "a1": "Yes. No ads, no subscription, no paid tier.",
+      "q2": "Why is Google the only way to sign in?",
+      "a2": "So there is no password for us to store, leak, or ask you to reset — we never see one. It also meant building the app instead of a signup form and a stack of reset emails.",
+      "q3": "Does it really work with no signal?",
+      "a3": "Yes. Starting a session loads everything it needs — your plan, and what you lifted last time — and finishing saves it once. Nothing in between needs a connection. Close the browser mid-workout and you’ll reopen exactly where you were.",
+      "q4": "Is there an App Store app?",
+      "a4": "No. It’s a web app you add to your home screen, where it opens on its own like any other app — no store, no update prompts.",
+      "q5": "kg or lb?",
+      "a5": "Either. It’s a display setting; weights are stored in kilograms and converted for you.",
+      "q6": "Does it track running or cardio?",
+      "a6": "No. Strength training only — programs, sets, reps and load. If you want one app for everything, this isn’t it."
+    },
+    "cta": {
+      "title": "Start your first session",
+      "body": "Ten minutes to type in your program. After that it’s one tap to start and one tap per set."
+    },
+    "footer": {
+      "label": "Footer",
+      "privacy": "Privacy",
+      "source": "Source",
+      "rights": "© {year} Workount"
+    }
+  },
+  "Privacy": {
+    "title": "Privacy",
+    "updated": "Last updated 19 August 2026",
+    "intro": "Workount stores what you train and almost nothing else. This page says exactly what that means, in the order the questions actually come up.",
+    "s1Title": "What Google tells us",
+    "s1Body": "Signing in with Google gives us your email address, your name, and your profile picture. That is the whole handover. We never receive your password — Google does not share it, and we have nowhere to put one. Google is the only sign-in method (there is no email-and-password option to fall back to).",
+    "s2Title": "What we store",
+    "s2Body": "Your profile — the name, email and picture above, plus your language and whether you read weights in kilograms or pounds. And your training: the programs you build, the sessions you log, every set with its weight, reps and whether it was a warmup. Nothing else. There is no tracking of your location, your contacts, your device, or anything you do outside this app.",
+    "s3Title": "Who can see it",
+    "s3Body": "Only you. Every table enforces row-level security in the database itself, keyed to your account, so the restriction does not depend on the app asking the right question. We do not sell data, we do not share it with advertisers, and there is no advertising in Workount at all.",
+    "s4Title": "Where it lives",
+    "s4Body": "In a Postgres database hosted by Supabase, and served by Vercel. Both are processors acting on our behalf; both may store data outside your country. Sessions you have not finished yet are also held in your own browser's storage on your device, which is what lets the app work with no signal.",
+    "s5Title": "The landing page",
+    "s5Body": "The public pages — this one and the front page — count visits using Vercel Web Analytics. It sets no cookies and builds no profile of you: it records that a page was viewed, roughly where from, and on what kind of device. It does not run anywhere inside the app itself.",
+    "s6Title": "Deleting it",
+    "s6Body": "Email us and we will delete your account and everything attached to it. Not archive it — delete it. Ask for a copy of your data first and you will get one.",
+    "s7Title": "Your rights",
+    "s7Body": "Under the LGPD in Brazil and the GDPR in Europe you can ask what we hold about you, ask for a copy, ask for corrections, and ask for deletion. The address below is the way to do any of that, and it reaches a person.",
+    "contactTitle": "Contact",
+    "contactBody": "Write to {email}.",
+    "back": "Back to the front page"
+  },
   "Pwa": {
     "body": "Install Workount. It opens faster and keeps working without a signal.",
     "iosInstructions": "Install Workount: tap Share, then \"Add to Home Screen\".",

@@ -21,11 +21,11 @@ function renderBar(pathname: string) {
 
 describe("TabBar", () => {
   it("renders the four destinations as links", () => {
-    renderBar("/");
+    renderBar("/home");
     const nav = screen.getByRole("navigation", { name: "Main" });
     expect(
       within(nav).getAllByRole("link").map((a) => a.getAttribute("href")),
-    ).toEqual(["/", "/programs", "/history", "/settings"]);
+    ).toEqual(["/home", "/programs", "/history", "/settings"]);
   });
 
   it("marks the current section with aria-current", () => {

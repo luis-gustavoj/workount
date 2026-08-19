@@ -5,6 +5,7 @@ import { getLocale } from "next-intl/server";
 
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { PwaShell } from "@/components/pwa/pwa-shell";
+import { siteUrl } from "@/lib/site/url";
 
 import "./globals.css";
 
@@ -23,6 +24,11 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  // Everything that emits an absolute URL — the marketing pages' canonical
+  // links and their generated OG image — resolves against this. Without it
+  // Next warns and falls back to localhost, which quietly ships a share card
+  // nobody outside your machine can load.
+  metadataBase: new URL(siteUrl()),
   title: "Workount",
   description: "Track your training programs and log your sessions.",
   // iOS Safari still doesn't fully read manifest.webmanifest (ticket 019):

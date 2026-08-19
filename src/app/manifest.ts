@@ -13,7 +13,10 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Workount",
     short_name: "Workount",
     description: "Track your training programs and log your sessions.",
-    start_url: "/",
+    // Not "/" — that is the public landing page (ADR-0007). An installed app
+    // must open into the app itself, and `/home` being redirect-guarded is
+    // also what keeps sw.js from ever caching marketing HTML as the shell.
+    start_url: "/home",
     display: "standalone",
     background_color: "#070707",
     theme_color: "#070707",
