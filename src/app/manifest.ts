@@ -17,6 +17,16 @@ export default function manifest(): MetadataRoute.Manifest {
     // must open into the app itself, and `/home` being redirect-guarded is
     // also what keeps sw.js from ever caching marketing HTML as the shell.
     start_url: "/home",
+    // Without this, scope defaults to the start_url's directory — which would
+    // put the landing page and the privacy policy OUTSIDE the installed app,
+    // so following a link to either would kick the user out into a browser tab.
+    scope: "/",
+    // Spelled out rather than left implicit. An absent `id` defaults to the
+    // resolved start_url, which makes the app's identity hostage to a routing
+    // change: editing start_url again would orphan every existing install
+    // instead of updating it. "/home" is exactly today's implicit value, so
+    // stating it changes nothing now and pins it from here on.
+    id: "/home",
     display: "standalone",
     background_color: "#070707",
     theme_color: "#070707",

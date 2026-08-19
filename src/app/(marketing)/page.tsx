@@ -14,6 +14,7 @@ import { GoogleSignInButton } from "@/app/sign-in/google-sign-in-button";
 import { LandingNav } from "@/components/marketing/landing-nav";
 import { PlayerMock } from "@/components/marketing/player-mock";
 import { Wordmark } from "@/components/marketing/wordmark";
+import { StandaloneRedirect } from "@/components/pwa/standalone-redirect";
 import { siteUrl } from "@/lib/site/url";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -103,6 +104,9 @@ export default async function LandingPage() {
 
   return (
     <>
+      {/* An installed launch never belongs on the pitch — see the component. */}
+      <StandaloneRedirect />
+
       <a
         href="#content"
         className="sr-only rounded-lg bg-raised px-4 py-2 text-sm text-ink focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:ring-3 focus:ring-ring/50"
