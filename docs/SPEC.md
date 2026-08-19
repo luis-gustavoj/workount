@@ -164,6 +164,14 @@ All three are program-scoped ([ADR-0004](adr/0004-analytics-are-scoped-to-a-prog
 
 ## 4. Screens
 
+### The shell
+
+Every signed-in screen renders inside the `(app)` layout, which is **navigation only**: a **bottom tab bar** — Home · Programs · History · Settings — and nothing else. There is no top header. The phone is held one-handed in a gym, where the thumb reaches the bottom of the screen and not the top; identity and sign-out live on Settings, where you go looking for them, rather than costing vertical space on every screen to show you your own name.
+
+The bar is hidden on `/session`: the player owns the bottom of the screen with its fixed entry deck, and a stray tap mid-set must not walk out of a session. Anything else anchored to the bottom of the viewport (the PWA install prompt) offsets itself above the bar — see `hasTabBar` in `src/lib/nav/routes.ts`, which is the single source of truth for both.
+
+The shell makes **zero queries per navigation**: the auth guard reads locally-verified, request-cached claims ([ADR-0006](adr/0006-local-jwt-verification.md)), and every route carries a `loading.tsx` skeleton so a tap paints immediately instead of waiting on the server.
+
 ### `/` — Home
 
 The default screen, and the one the user sees most. It answers exactly one question: **"what do I do right now?"** Resolved in strict priority order:

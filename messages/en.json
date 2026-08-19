@@ -13,14 +13,18 @@
     "dismiss": "Dismiss"
   },
   "Shell": {
-    "signOut": "Sign out",
-    "signedIn": "Signed in",
+    "primaryNav": "Main",
+    "home": "Home",
+    "programs": "Programs",
+    "history": "History",
     "settings": "Settings"
   },
   "Settings": {
     "title": "Settings",
     "language": "Language",
-    "languageDescription": "The language the app is displayed in."
+    "languageDescription": "The language the app is displayed in.",
+    "account": "Account",
+    "signOut": "Sign out"
   },
   "Programs": {
     "title": "Programs",

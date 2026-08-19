@@ -2,28 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { userFromClaims } from "@/lib/auth/claims";
-
-/**
- * Paths an unauthenticated visitor is allowed to reach. Everything else in the
- * app requires a session and is redirected to `/sign-in`.
- *
- * - `/sign-in` — the one-button Google sign-in screen (ADR-0003).
- * - `/auth` — the OAuth callback (`/auth/callback`) that exchanges the code for
- *   a session; it must be reachable while still signed out.
- */
-const PUBLIC_PATHS = ["/sign-in", "/auth"];
-
-/**
- * Whether an unauthenticated request to `pathname` is allowed through. A path
- * is public if it exactly equals a public path or sits under it (`/auth` also
- * covers `/auth/callback`). The trailing-slash boundary is deliberate: it stops
- * `/sign-in-later` from matching `/sign-in`.
- */
-export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(
-    (base) => pathname === base || pathname.startsWith(`${base}/`),
-  );
-}
+import { isPublicPath } from "@/lib/nav/routes";
 
 /**
  * Refreshes the Supabase auth session on every request and guards protected

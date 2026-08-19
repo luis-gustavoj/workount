@@ -8,6 +8,14 @@ import { InstallPrompt } from "./install-prompt";
 
 const DISMISSED_KEY = "workount:install-dismissed";
 
+// The prompt lifts itself above the bottom tab bar, so it reads the current
+// pathname to know whether there is a bar to clear. Home is the ordinary case:
+// a bar is present and the prompt is offset above it.
+const mockPathname = vi.fn<() => string>(() => "/");
+vi.mock("next/navigation", () => ({
+  usePathname: () => mockPathname(),
+}));
+
 function renderPrompt() {
   return render(
     <NextIntlClientProvider locale="en" messages={en}>
@@ -26,6 +34,7 @@ function setUserAgent(userAgent: string) {
 
 beforeEach(() => {
   localStorage.clear();
+  mockPathname.mockReturnValue("/");
 });
 
 afterEach(() => {
@@ -74,6 +83,32 @@ describe("InstallPrompt", () => {
 
     expect(screen.queryByText(/Add to Home Screen/)).not.toBeInTheDocument();
     expect(localStorage.getItem(DISMISSED_KEY)).toBe("1");
+  });
+
+  // Regression: the prompt is `fixed` at the bottom of the viewport, which the
+  // bottom tab bar now owns. Pinned to bottom:0 it covers navigation outright.
+  it("sits above the tab bar on a screen that has one", async () => {
+    mockPathname.mockReturnValue("/");
+    setUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)");
+    renderPrompt();
+
+    const banner = (await screen.findByText(/Add to Home Screen/)).closest(
+      "div.fixed",
+    );
+    expect(banner).toHaveStyle({
+      bottom: "calc(3.5rem + env(safe-area-inset-bottom))",
+    });
+  });
+
+  it("pins to the bottom where there is no tab bar to clear", async () => {
+    mockPathname.mockReturnValue("/session");
+    setUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)");
+    renderPrompt();
+
+    const banner = (await screen.findByText(/Add to Home Screen/)).closest(
+      "div.fixed",
+    );
+    expect(banner).toHaveStyle({ bottom: "0px" });
   });
 
   it("stays dismissed across a remount", () => {

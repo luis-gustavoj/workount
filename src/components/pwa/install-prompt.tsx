@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import {
@@ -9,6 +10,7 @@ import {
   shouldShowInstallBanner,
   type InstallPlatform,
 } from "@/lib/pwa/install-prompt";
+import { hasTabBar, TAB_BAR_HEIGHT } from "@/lib/nav/routes";
 import { isStandalone } from "@/lib/pwa/is-standalone";
 import { Button } from "@/components/ui/button";
 
@@ -34,6 +36,7 @@ type BeforeInstallPromptEvent = Event & {
  */
 export function InstallPrompt() {
   const t = useTranslations("Pwa");
+  const pathname = usePathname();
   const [platform] = useState<InstallPlatform>(() =>
     typeof navigator === "undefined" ? "other" : detectPlatform(navigator.userAgent),
   );
@@ -79,7 +82,13 @@ export function InstallPrompt() {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-raised px-4 py-3">
+    <div
+      className="fixed inset-x-0 z-20 border-t border-line bg-raised px-4 py-3"
+      // Sit above the bottom tab bar rather than over it. On screens without a
+      // bar — sign-in, the session player — the offset is zero and this pins to
+      // the bottom exactly as it always did.
+      style={{ bottom: hasTabBar(pathname) ? TAB_BAR_HEIGHT : 0 }}
+    >
       <div className="mx-auto flex w-full max-w-[480px] items-center gap-3">
         <p className="flex-1 text-sm text-ink">
           {platform === "ios" ? t("iosInstructions") : t("body")}

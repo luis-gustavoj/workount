@@ -13,14 +13,18 @@
     "dismiss": "Dispensar"
   },
   "Shell": {
-    "signOut": "Sair",
-    "signedIn": "Conectado",
+    "primaryNav": "Principal",
+    "home": "Início",
+    "programs": "Programas",
+    "history": "Histórico",
     "settings": "Configurações"
   },
   "Settings": {
     "title": "Configurações",
     "language": "Idioma",
-    "languageDescription": "O idioma em que o app é exibido."
+    "languageDescription": "O idioma em que o app é exibido.",
+    "account": "Conta",
+    "signOut": "Sair"
   },
   "Programs": {
     "title": "Programas",
