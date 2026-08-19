@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { userFromClaims } from "@/lib/auth/claims";
+
 /**
  * Paths an unauthenticated visitor is allowed to reach. Everything else in the
  * app requires a session and is redirected to `/sign-in`.
@@ -25,7 +27,8 @@ export function isPublicPath(pathname: string): boolean {
 
 /**
  * Refreshes the Supabase auth session on every request and guards protected
- * routes. Called from `src/middleware.ts`.
+ * routes. Called from `src/proxy.ts` (Next 16 renamed the `middleware` file
+ * convention to `proxy`; the old name still builds but logs a deprecation).
  *
  * The cookie handling here is load-bearing and easy to break invisibly:
  *
@@ -37,9 +40,14 @@ export function isPublicPath(pathname: string): boolean {
  *    a freshly constructed `NextResponse` instead would drop the refreshed auth
  *    cookies and silently log users out mid-session.
  *
- * Do not insert logic between `createServerClient` and `getUser()`: `getUser`
- * is what actually revalidates the token, and anything racing it can desync the
- * session.
+ * Do not insert logic between `createServerClient` and `getClaims()`: that call
+ * is what reads — and, when expired, refreshes — the session, and anything
+ * racing it can desync cookies.
+ *
+ * `getClaims()` rather than `getUser()` is ADR-0006: it verifies the token's
+ * ES256 signature locally instead of spending a network round trip per request
+ * to be told what the token already says. The refresh behaviour is unchanged —
+ * `getClaims()` reads the session underneath, which is where refresh lives.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -65,10 +73,9 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: no code between createServerClient and getUser().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: no code between createServerClient and getClaims().
+  const { data } = await supabase.auth.getClaims();
+  const user = userFromClaims(data?.claims);
 
   if (!user && !isPublicPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();

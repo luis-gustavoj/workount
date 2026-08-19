@@ -9,6 +9,7 @@ import { AddExercise } from "@/app/(app)/programs/[id]/workouts/[workoutId]/add-
 import { ExerciseList } from "@/app/(app)/programs/[id]/workouts/[workoutId]/exercise-list";
 import { StartSessionButton } from "@/app/(app)/programs/[id]/workouts/[workoutId]/start-session-button";
 import { listExercises } from "@/lib/exercises/queries";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,9 +39,7 @@ export default async function WorkoutDetailPage({
 
   const t = await getTranslations("Programs");
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
   const [{ data: program }, { data: workout }, { data: profile }, exercises, workoutExercises] =
@@ -68,8 +67,9 @@ export default async function WorkoutDetailPage({
   if (!program || !workout) notFound();
 
   // profiles.default_rest_seconds — the value an empty rest override
-  // inherits (SPEC.md §2). (app)/layout.tsx guarantees the row exists; the
-  // fallback mirrors the column's own DB default (migration 0001).
+  // inherits (SPEC.md §2). The row is guaranteed by the handle_new_user
+  // trigger and repaired at sign-in; the fallback mirrors the column's own DB
+  // default (migration 0001).
   const defaultRestSeconds = profile?.default_rest_seconds ?? 90;
   const supersetGroupOptions = availableSupersetGroups(workoutExercises);
 

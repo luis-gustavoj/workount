@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { getHomeData } from "@/lib/home/query";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 
 import { HomeScreen } from "./home-screen";
@@ -12,9 +13,7 @@ import { HomeScreen } from "./home-screen";
  */
 export default async function Home() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
   const data = await getHomeData(supabase, user.id);

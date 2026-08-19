@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { isUniqueViolation } from "@/lib/exercises/errors";
 import { toExerciseOption, type ExerciseOption } from "@/lib/exercises/search";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { createCustomExerciseSchema } from "@/lib/validation/exercise";
 
@@ -29,9 +30,7 @@ export async function createCustomExercise(
   const { name, muscleGroup, equipment } = createCustomExerciseSchema.parse(input);
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error("Not authenticated");
 
   const { data, error } = await supabase

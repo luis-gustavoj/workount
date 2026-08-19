@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isPublicPath } from "./middleware";
+import { isPublicPath } from "./proxy";
 
 // `isPublicPath` is the pure decision at the heart of the auth guard: given a
 // pathname, may an unauthenticated visitor reach it? Everything protectable in

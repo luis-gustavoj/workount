@@ -19,7 +19,7 @@ Read [CONTEXT.md](CONTEXT.md) first — it defines every term used below. In par
 | Framework | Next.js (App Router, TypeScript), `src/` layout |
 | Styling | Tailwind + shadcn/ui |
 | Data | Supabase Postgres, RLS on every table |
-| Auth | Supabase Auth, Google OAuth only |
+| Auth | Supabase Auth, Google OAuth only. Route guard in `src/proxy.ts` (Next 16's replacement for `middleware`); the server reads the user via `getCurrentUser()`, which verifies the JWT locally ([ADR-0006](adr/0006-local-jwt-verification.md)) |
 | Client state | Zustand, persisted to IndexedDB via `idb-keyval` |
 | Charts | Recharts |
 | Validation | Zod, at every Server Action boundary |

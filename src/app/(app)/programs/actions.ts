@@ -20,6 +20,7 @@ import {
   reorderWorkoutExercisesSchema,
   updateWorkoutExerciseSchema,
 } from "@/lib/validation/workout-exercise";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 
 // Server Actions for program CRUD and the "follow this program" flow (ticket
@@ -30,9 +31,7 @@ import { createClient } from "@/lib/supabase/server";
 
 async function requireUser() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error("Not authenticated");
   return { supabase, user };
 }

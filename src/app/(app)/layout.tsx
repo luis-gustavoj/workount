@@ -1,22 +1,26 @@
 import { Dumbbell, History, Settings } from "lucide-react";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { signOut } from "@/lib/auth/actions";
-import { profileFromUser } from "@/lib/auth/profile";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 
 /**
  * The signed-in shell. Every route in the `(app)` group renders inside it, so
- * it is the single place that (a) guarantees a user and (b) guarantees that
- * user has a `profiles` row before any child screen reads one.
+ * it is the single place that guarantees a user.
  *
- * The middleware already redirects unauthenticated requests to `/sign-in`, so
- * the `!user` branch here is belt-and-suspenders — but it also narrows the type
- * for everything below.
+ * The proxy (`src/proxy.ts`) already redirects unauthenticated requests to
+ * `/sign-in`, so the `!user` branch here is belt-and-suspenders — but it also
+ * narrows the type for everything below. `getCurrentUser` is request-cached
+ * (ADR-0006), so this costs nothing on top of what the page itself will ask
+ * for.
+ *
+ * Creating the `profiles` row is no longer this layout's job: that repair moved
+ * to the OAuth callback, where a row can actually be missing, instead of being
+ * re-checked on every single navigation.
  */
 export default async function AppLayout({
   children,
@@ -25,40 +29,21 @@ export default async function AppLayout({
 }) {
   const t = await getTranslations("Shell");
   const tHistory = await getTranslations("History");
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
-  // Self-heal (ticket 005). The handle_new_user trigger is the normal path a
-  // profile is created, but a signed-in user who somehow has no row must be
-  // repaired here, not shown a crash. `maybeSingle` returns null (not an error)
-  // when the row is absent, which is exactly the case we recover from.
+  // Read-only: the row is guaranteed by the handle_new_user trigger and
+  // repaired at sign-in. `maybeSingle` still tolerates its absence rather than
+  // erroring — the header just falls back to the email.
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("display_name, avatar_url")
     .eq("id", user.id)
     .maybeSingle();
 
-  let displayName = profile?.display_name ?? null;
-  let avatarUrl = profile?.avatar_url ?? null;
-  if (!profile) {
-    // Seed locale from Accept-Language on this fallback creation path too, so a
-    // Portuguese browser doesn't get an English profile when the trigger missed.
-    const seed = profileFromUser(
-      user,
-      (await headers()).get("accept-language"),
-    );
-    // ignoreDuplicates so a race with the trigger (or a second tab) is a no-op
-    // rather than a unique-violation. RLS permits this insert: the profiles
-    // policy allows `id = auth.uid()`, and we are that user.
-    await supabase
-      .from("profiles")
-      .upsert(seed, { onConflict: "id", ignoreDuplicates: true });
-    displayName = seed.display_name ?? null;
-    avatarUrl = seed.avatar_url ?? null;
-  }
+  const displayName = profile?.display_name ?? null;
+  const avatarUrl = profile?.avatar_url ?? null;
 
   const label = displayName ?? user.email ?? t("signedIn");
 

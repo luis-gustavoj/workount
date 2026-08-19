@@ -49,7 +49,15 @@ vi.mock("next-intl/server", () => ({
 const maybeSingle = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
-    auth: { getUser: async () => ({ data: { user: { id: "user-1" } } }) },
+    // ADR-0006: the server reads the user from locally-verified JWT claims,
+    // so the stub returns claims rather than a user object. `role` matters —
+    // `userFromClaims` rejects anything that isn't `authenticated`.
+    auth: {
+      getClaims: async () => ({
+        data: { claims: { sub: "user-1", role: "authenticated" } },
+        error: null,
+      }),
+    },
     from: () => ({
       select: () => ({ eq: () => ({ maybeSingle }) }),
     }),
