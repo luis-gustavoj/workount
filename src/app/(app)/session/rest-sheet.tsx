@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { usePrefersReducedMotion } from "@/lib/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
 import { RestTimer } from "./rest-timer";
@@ -10,22 +11,8 @@ import { RestTimer } from "./rest-timer";
 // motion band) — the sheet stays mounted this long after `restEndsAt` goes
 // null, so the content doesn't just vanish mid-slide.
 const EXIT_MS = 180;
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 type Phase = "entering" | "open" | "leaving" | "closed";
-
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() => window.matchMedia(REDUCED_MOTION_QUERY).matches);
-
-  useEffect(() => {
-    const mql = window.matchMedia(REDUCED_MOTION_QUERY);
-    const onChange = () => setReduced(mql.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-
-  return reduced;
-}
 
 /**
  * `entering` -> `open` -> `leaving` -> `closed`, driven purely by `active`.

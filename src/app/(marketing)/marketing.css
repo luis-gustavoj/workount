@@ -1,0 +1,98 @@
+/*
+ * Styles for the public surface only — the landing page and the privacy policy.
+ *
+ * Imported by `(marketing)/layout.tsx` rather than added to `globals.css`,
+ * because ADR-0007's exemption is scoped to this directory and the boundary
+ * should be visible in the file tree, not just in a comment. Nothing here
+ * reaches the app.
+ *
+ * The colour tokens are still the app's own (`--bg`, `--surface`, `--signal`,
+ * the ink ramp). What this file adds is the two things DESIGN.md refuses and
+ * marketing is allowed: a gradient, and a raised card.
+ */
+
+/* The hero wash. A single azure bloom behind the headline — the same signal
+   hue the app spends on a running timer, at a fraction of its chroma, so the
+   page reads as this product rather than as a template with a purple gradient.
+   Painted with `radial-gradient` on a pseudo-element rather than a blurred div:
+   no `filter: blur()` means no compositing cost while scrolling. */
+.marketing-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.marketing-glow::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto;
+  z-index: -1;
+  height: 44rem;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      55% 42% at 50% 0%,
+      color-mix(in oklch, var(--signal) 20%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      38% 30% at 78% 14%,
+      color-mix(in oklch, var(--signal) 10%, transparent) 0%,
+      transparent 70%
+    );
+}
+
+/* A hairline that fades out at both ends, used to separate sections without
+   drawing a full-width rule across the page. */
+.marketing-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--line) 18%,
+    var(--line) 82%,
+    transparent
+  );
+}
+
+/* The bento tile. A card — forbidden in the app, allowed here (ADR-0007).
+   The top-edge highlight is what stops a flat panel on a near-black page from
+   reading as a hole rather than a surface. */
+.marketing-card {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--raised) 55%, transparent) 0%,
+    var(--surface) 60%
+  );
+  overflow: hidden;
+}
+
+.marketing-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, var(--ink) 22%, transparent),
+    transparent
+  );
+}
+
+/* DESIGN.md's settle: 160ms, opacity and a 2px rise. Copied rather than
+   imported because the player expresses it in Tailwind classes, and the
+   values — not the implementation — are the thing that must match. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

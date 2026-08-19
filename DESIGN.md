@@ -125,3 +125,5 @@ Recorded because these are the failures the design is defined against:
 - Color as the only carrier of any state, anywhere.
 - Any celebration copy. "Great job!" is a bug report.
 - Proportional numerals.
+
+This list governs the **product**. Marketing surfaces — `src/app/(marketing)/`, today the landing page and the privacy policy — are exempt from it, within bounds recorded in [ADR-0007](docs/adr/0007-marketing-surfaces-are-outside-the-design-system.md). Nothing in `(app)` or `/sign-in` is exempt.

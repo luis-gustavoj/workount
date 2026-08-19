@@ -35,6 +35,9 @@ Work **blockers-first**. Any ticket whose blockers are all `done` can be picked 
 
 013 ──── 023 session-player-ux-refactor
 
+024 ──── 025 landing-page          ◀── `/` becomes public; home moves to /home
+          └─ 026 starter-programs  (scoped by what 025's analytics show)
+
 005 ──── 022 i18n-foundation   ◀── land before 006; screens 006–018
                                     author copy through the catalog
 ```
@@ -67,6 +70,8 @@ Work **blockers-first**. Any ticket whose blockers are all `done` can be picked 
 | 022 | [i18n foundation (en + pt-BR)](022-i18n.md) | 003, 005 | Foundation |
 | 023 | [Session player UX refactor: rest sheet, editable sets, unclamped last-time](023-session-player-ux-refactor.md) | 012, 013 | Polish |
 | 024 | [Bottom tab bar, start-from-home, and perceived speed](024-navigation-and-perceived-speed.md) | 015, 019, 022 | Polish |
+| 025 | [Landing page; home moves to `/home`](025-landing-page.md) | 022, 024 | Public |
+| 026 | [Starter programs](026-starter-programs.md) | 006, 025 | Public |
 
 ## Two checkpoints worth stopping at
 

@@ -111,7 +111,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${base}/sign-in?error=exchange`);
   }
 
-  const response = NextResponse.redirect(`${base}/`);
+  const response = NextResponse.redirect(`${base}/home`);
 
   // Seed/read the locale and mirror it into the cookie the root layout resolves
   // from, so the very first authenticated render is already in the right

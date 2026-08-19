@@ -16,8 +16,26 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/auth/callback")).toBe(true);
   });
 
-  it("protects the home screen", () => {
-    expect(isPublicPath("/")).toBe(false);
+  it("allows the landing page at the bare domain", () => {
+    expect(isPublicPath("/")).toBe(true);
+  });
+
+  it("allows the privacy policy", () => {
+    expect(isPublicPath("/privacy")).toBe(true);
+  });
+
+  it("protects the home screen at its new path", () => {
+    expect(isPublicPath("/home")).toBe(false);
+  });
+
+  // The whole reason `/` is special-cased to an exact match: every pathname in
+  // the app starts with a slash, so running `/` through the same prefix test as
+  // the other public bases would return true for all of them and open the
+  // guard entirely. This is the assertion that catches that.
+  it("does not let the landing page's `/` open every other route", () => {
+    for (const path of ["/home", "/session", "/programs/123", "/settings"]) {
+      expect(isPublicPath(path)).toBe(false);
+    }
   });
 
   it.each(["/programs", "/programs/123", "/session", "/history"])(
@@ -38,7 +56,7 @@ describe("isPublicPath", () => {
 describe("TABS", () => {
   it("has one entry per top-level section, in display order", () => {
     expect(TABS.map((t) => t.href)).toEqual([
-      "/",
+      "/home",
       "/programs",
       "/history",
       "/settings",
@@ -47,12 +65,13 @@ describe("TABS", () => {
 });
 
 describe("isTabActive", () => {
-  // The bug this guards: every pathname starts with "/", so a prefix test
-  // would light the Home tab on every screen in the app.
-  it("matches Home only on Home itself", () => {
-    expect(isTabActive("/", "/")).toBe(true);
-    expect(isTabActive("/", "/programs")).toBe(false);
-    expect(isTabActive("/", "/history/abc")).toBe(false);
+  // Home used to live at "/", where a prefix test lit the Home tab on every
+  // screen in the app. At "/home" that hazard is gone from this function —
+  // `isPublicPath` is where it still has to be guarded against.
+  it("matches Home on Home itself and nowhere else", () => {
+    expect(isTabActive("/home", "/home")).toBe(true);
+    expect(isTabActive("/home", "/programs")).toBe(false);
+    expect(isTabActive("/home", "/history/abc")).toBe(false);
   });
 
   it("matches a section on its own path", () => {
@@ -85,7 +104,7 @@ describe("isTabActive", () => {
 describe("hasTabBar", () => {
   it("is true on every ordinary signed-in screen", () => {
     for (const path of [
-      "/",
+      "/home",
       "/programs",
       "/programs/new",
       "/programs/abc/workouts/def",
@@ -105,6 +124,8 @@ describe("hasTabBar", () => {
 
   // The bar lives in the (app) layout, so the public routes never have one.
   it("is false on the public routes", () => {
+    expect(hasTabBar("/")).toBe(false);
+    expect(hasTabBar("/privacy")).toBe(false);
     expect(hasTabBar("/sign-in")).toBe(false);
     expect(hasTabBar("/auth/callback")).toBe(false);
   });

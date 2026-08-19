@@ -34,7 +34,7 @@ function setUserAgent(userAgent: string) {
 
 beforeEach(() => {
   localStorage.clear();
-  mockPathname.mockReturnValue("/");
+  mockPathname.mockReturnValue("/home");
 });
 
 afterEach(() => {
@@ -88,7 +88,7 @@ describe("InstallPrompt", () => {
   // Regression: the prompt is `fixed` at the bottom of the viewport, which the
   // bottom tab bar now owns. Pinned to bottom:0 it covers navigation outright.
   it("sits above the tab bar on a screen that has one", async () => {
-    mockPathname.mockReturnValue("/");
+    mockPathname.mockReturnValue("/home");
     setUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)");
     renderPrompt();
 
