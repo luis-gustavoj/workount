@@ -59,7 +59,7 @@ describe("StartSessionButton", () => {
     await user.click(screen.getByRole("button", { name: "Start session" }));
 
     expect(
-      await screen.findByText("Couldn't start the session. Check your connection and try again."),
+      await screen.findByText("Couldn’t start the session. Check your connection and try again."),
     ).toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
   });

@@ -110,7 +110,7 @@ describe("AdherenceChart", () => {
 
     expect(
       screen.getByText(
-        "This program schedules no workouts to a day, so there’s nothing to measure against.",
+        "None of this program’s workouts are set to a day of the week, so there’s nothing to measure against.",
       ),
     ).toBeInTheDocument();
     expect(

@@ -113,10 +113,10 @@ describe("ExercisePicker", () => {
     renderPicker();
     await openPicker(user);
 
-    expect(screen.queryByText(/can't find it/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/can’t find it/i)).not.toBeInTheDocument();
 
     await user.type(screen.getByPlaceholderText("Search exercises"), "Nordic Curl");
-    expect(screen.getByText('Can\'t find it? Create "Nordic Curl"')).toBeInTheDocument();
+    expect(screen.getByText('Can’t find it? Create "Nordic Curl"')).toBeInTheDocument();
   });
 
   it("creates a custom exercise and selects it immediately (acceptance)", async () => {
@@ -134,7 +134,7 @@ describe("ExercisePicker", () => {
     await openPicker(user);
 
     await user.type(screen.getByPlaceholderText("Search exercises"), "Nordic Curl");
-    await user.click(screen.getByText('Can\'t find it? Create "Nordic Curl"'));
+    await user.click(screen.getByText('Can’t find it? Create "Nordic Curl"'));
 
     expect(screen.getByLabelText("Name")).toHaveValue("Nordic Curl");
 
@@ -162,7 +162,7 @@ describe("ExercisePicker", () => {
     await openPicker(user);
 
     await user.type(screen.getByPlaceholderText("Search exercises"), "My Custom Lift");
-    await user.click(screen.getByText('Can\'t find it? Create "My Custom Lift"'));
+    await user.click(screen.getByText('Can’t find it? Create "My Custom Lift"'));
     await selectOption(user, "Muscle group", "Chest");
     await selectOption(user, "Equipment", "Barbell");
     await user.click(screen.getByRole("button", { name: "Create" }));
@@ -181,7 +181,7 @@ describe("ExercisePicker", () => {
     await openPicker(user);
 
     await user.type(screen.getByPlaceholderText("Search exercises"), "Bench Press");
-    await user.click(screen.getByText('Can\'t find it? Create "Bench Press"'));
+    await user.click(screen.getByText('Can’t find it? Create "Bench Press"'));
 
     expect(screen.getByText("Did you mean one of these?")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Barbell Bench Press" })).toBeInTheDocument();
@@ -196,7 +196,7 @@ describe("ExercisePicker", () => {
     await openPicker(user);
 
     await user.type(screen.getByPlaceholderText("Search exercises"), "Bench Press");
-    await user.click(screen.getByText('Can\'t find it? Create "Bench Press"'));
+    await user.click(screen.getByText('Can’t find it? Create "Bench Press"'));
     await user.click(screen.getByRole("button", { name: "Barbell Bench Press" }));
 
     expect(onSelect).toHaveBeenCalledWith(EXERCISES[0]);

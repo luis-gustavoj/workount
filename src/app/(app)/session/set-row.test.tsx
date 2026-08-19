@@ -53,7 +53,7 @@ describe("SetRow — last-time layout", () => {
     renderRow({ lastTimeText: null });
 
     expect(screen.getByText("Last time")).toBeInTheDocument();
-    expect(screen.getByText("No last time yet")).toBeInTheDocument();
+    expect(screen.getByText("First time")).toBeInTheDocument();
   });
 });
 

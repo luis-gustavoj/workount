@@ -118,7 +118,7 @@ describe("SessionPlayer", () => {
 
     expect(await screen.findByText("Barbell Bench Press")).toBeInTheDocument();
     expect(screen.getByText("2 × 8–12")).toBeInTheDocument();
-    expect(screen.getByText("No last time yet")).toBeInTheDocument();
+    expect(screen.getByText("First time")).toBeInTheDocument();
   });
 
   it("shows the last-performance reference against the upcoming set", async () => {
@@ -503,7 +503,7 @@ describe("SessionPlayer", () => {
 
       expect(
         await screen.findByText(
-          "Couldn't save — check your connection and try again. Your session is safe on this device.",
+          "Couldn’t save. Check your connection and try again; your session is safe on this device.",
         ),
       ).toBeInTheDocument();
       expect(mockPush).not.toHaveBeenCalled();
@@ -533,7 +533,7 @@ describe("SessionPlayer", () => {
 
       expect(
         await screen.findByText(
-          "Couldn't save — check your connection and try again. Your session is safe on this device.",
+          "Couldn’t save. Check your connection and try again; your session is safe on this device.",
         ),
       ).toBeInTheDocument();
       expect(mockPush).not.toHaveBeenCalled();

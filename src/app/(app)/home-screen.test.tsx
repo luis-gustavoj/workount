@@ -90,7 +90,7 @@ describe("HomeScreen — starting a workout", () => {
     await userEvent.click(start);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      /couldn't start the session/i,
+      /couldn’t start the session/i,
     );
     expect(push).not.toHaveBeenCalled();
   });

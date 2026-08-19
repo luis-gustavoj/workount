@@ -79,7 +79,7 @@ describe("PrescriptionForm", () => {
     renderForm({ defaultRestSeconds: 75 });
 
     expect(screen.getByLabelText("Rest (seconds)")).toHaveAttribute("placeholder", "75");
-    expect(screen.getByText("Empty inherits your default of 75s")).toBeInTheDocument();
+    expect(screen.getByText("Leave empty to use your default of 75s.")).toBeInTheDocument();
   });
 
   it("disables submit and shows an inline error when rep max is below rep min", async () => {
@@ -91,7 +91,7 @@ describe("PrescriptionForm", () => {
     await user.type(repMax, "2");
 
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
-    expect(screen.getByText("Rep max must be at least rep min.")).toBeInTheDocument();
+    expect(screen.getByText("The maximum can’t be lower than the minimum.")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 

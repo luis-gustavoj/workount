@@ -134,7 +134,7 @@ describe("ExerciseList", () => {
     await user.click(screen.getByRole("button", { name: "Remove" }));
 
     expect(window.confirm).toHaveBeenCalledWith(
-      "Remove this exercise from the workout? Sessions performed from it are kept.",
+      "Remove this exercise from the workout? The sessions you already did stay in History.",
     );
   });
 
