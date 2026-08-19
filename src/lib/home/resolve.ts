@@ -27,6 +27,12 @@ export type HomeWorkout = {
   // needed by `findNextScheduledWorkout`; callers building `HomeWorkout`s for
   // `todaysWorkouts` already know it matches today.
   dayOfWeek: number | null;
+  // How many exercises the workout prescribes. The resolver does not read it
+  // — it decides *which* workout, not what the card offers — but Home starts
+  // sessions directly now (ticket 024), and a workout with zero exercises
+  // must offer "Add exercises" instead of a Start that drops the user into an
+  // empty player claiming no session is in progress.
+  exerciseCount: number;
 };
 
 export type HomeDraft = {

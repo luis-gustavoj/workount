@@ -4,10 +4,10 @@ import { findNextScheduledWorkout, resolveHome, type HomeWorkout, type ResolveHo
 
 const NOW = Date.parse("2026-07-16T18:00:00.000Z"); // a Thursday
 
-const pushA: HomeWorkout = { id: "w-push-a", name: "Push A", dayOfWeek: 4 }; // Thursday
-const pullA: HomeWorkout = { id: "w-pull-a", name: "Pull A", dayOfWeek: 4 }; // Thursday, same day as pushA
-const legsA: HomeWorkout = { id: "w-legs-a", name: "Legs A", dayOfWeek: 1 }; // Monday
-const unscheduled: HomeWorkout = { id: "w-any", name: "Full Body", dayOfWeek: null };
+const pushA: HomeWorkout = { id: "w-push-a", name: "Push A", dayOfWeek: 4 , exerciseCount: 4 }; // Thursday
+const pullA: HomeWorkout = { id: "w-pull-a", name: "Pull A", dayOfWeek: 4 , exerciseCount: 4 }; // Thursday, same day as pushA
+const legsA: HomeWorkout = { id: "w-legs-a", name: "Legs A", dayOfWeek: 1 , exerciseCount: 4 }; // Monday
+const unscheduled: HomeWorkout = { id: "w-any", name: "Full Body", dayOfWeek: null , exerciseCount: 4 };
 
 function baseInput(overrides: Partial<ResolveHomeInput> = {}): ResolveHomeInput {
   return {
@@ -109,8 +109,8 @@ describe("findNextScheduledWorkout", () => {
   });
 
   it("prefers the nearer of two scheduled workouts", () => {
-    const wed: HomeWorkout = { id: "w-wed", name: "Wed Workout", dayOfWeek: 3 };
-    const fri: HomeWorkout = { id: "w-fri", name: "Fri Workout", dayOfWeek: 5 };
+    const wed: HomeWorkout = { id: "w-wed", name: "Wed Workout", dayOfWeek: 3 , exerciseCount: 4 };
+    const fri: HomeWorkout = { id: "w-fri", name: "Fri Workout", dayOfWeek: 5 , exerciseCount: 4 };
     // today is Thursday (4): wed is 6 days away, fri is 1 day away
     expect(findNextScheduledWorkout([wed, fri], 4)).toEqual(fri);
   });

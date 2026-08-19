@@ -1,22 +1,24 @@
 import { redirect } from "next/navigation";
 
-import { getHomeData } from "@/lib/home/query";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { getHomeData } from "@/lib/home/query";
 import { createClient } from "@/lib/supabase/server";
 
 import { HomeScreen } from "./home-screen";
 
 /**
- * `/` — home (ticket 015, SPEC.md §4). Fetches everything server-side except
- * the draft, which only exists in the browser's IndexedDB (ADR-0001) — that
- * half of `resolveHome`'s input is read inside `HomeScreen` itself.
+ * `/` — home (tickets 015 / 024, SPEC.md §4). Fetches everything server-side
+ * in one round trip except the draft, which only exists in the browser's
+ * IndexedDB (ADR-0001) — that half of `resolveHome`'s input is read inside
+ * `HomeScreen` itself.
  */
 export default async function Home() {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
-  const data = await getHomeData(supabase, user.id);
+  // No user id argument: get_home_data is RLS-scoped to the caller and reads
+  // auth.uid() itself.
+  const data = await getHomeData(await createClient());
 
   return <HomeScreen data={data} />;
 }

@@ -140,7 +140,6 @@
     "other": "Other"
   },
   "Home": {
-    "loading": "Loading…",
     "noProgramTitle": "No active program",
     "noProgramBody": "Create a program to get a recommendation here every time you open the app.",
     "noProgramCta": "Create a program",
@@ -151,6 +150,11 @@
     "discard": "Discard",
     "todayTitle": "Today: {name}",
     "startWorkout": "Start workout",
+    "viewPlan": "View plan",
+    "starting": "Starting…",
+    "startError": "Couldn't start the session. Check your connection and try again.",
+    "noExercises": "No exercises yet.",
+    "addExercises": "Add exercises",
     "restTitle": "Rest day",
     "restDoneToday": "{names} done today ✓",
     "restNext": "Next up: {name}",

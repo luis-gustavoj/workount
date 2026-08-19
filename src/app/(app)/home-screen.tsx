@@ -2,14 +2,17 @@
 
 import { del as idbDel, get as idbGet } from "idb-keyval";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 
 import { buildResolveHomeInput } from "@/lib/home/build-input";
 import type { HomeData } from "@/lib/home/query";
-import { resolveHome, type HomeState } from "@/lib/home/resolve";
+import { resolveHome, type HomeState, type HomeWorkout } from "@/lib/home/resolve";
 import { calculateStreak } from "@/lib/home/streak";
+import { startSession } from "@/lib/session/start";
 import { ACTIVE_DRAFT_KEY, type SessionDraft } from "@/lib/session/types";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,92 +21,149 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-type Status = "loading" | "ready";
+/**
+ * The primary action for one of today's workouts: start it, or — if it has no
+ * exercises yet — go add some.
+ *
+ * Defined at module scope, not inside `HomeScreen`. A component declared inside
+ * another is a *new component type* on every render, so React unmounts and
+ * remounts its whole subtree each time the parent's state changes — throwing
+ * away the DOM node, and with it any focus sitting on this button.
+ */
+function TodayActions({
+  workout,
+  planHref,
+  canStart,
+  isStarting,
+  onStart,
+}: {
+  workout: HomeWorkout;
+  planHref: string;
+  canStart: boolean;
+  isStarting: boolean;
+  onStart: () => void;
+}) {
+  const t = useTranslations("Home");
+
+  // A workout with no exercises has nothing to start. Starting it anyway would
+  // land the user in a player whose empty state reads "No session in progress"
+  // — a confusing lie moments after they started one.
+  if (workout.exerciseCount === 0) {
+    return (
+      <div className="flex flex-col gap-2">
+        <p className="text-ink-muted text-sm">{t("noExercises")}</p>
+        <Button asChild className="self-start">
+          <Link href={planHref}>{t("addExercises")}</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <Button type="button" disabled={!canStart || isStarting} onClick={onStart}>
+        {isStarting ? t("starting") : t("startWorkout")}
+      </Button>
+      <Link
+        href={planHref}
+        className="text-ink-muted rounded-md text-sm underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        {t("viewPlan")}
+      </Link>
+    </div>
+  );
+}
 
 /**
- * `/` — the home screen (ticket 015). The draft check is client-only (it
- * lives in IndexedDB, ADR-0001), so this whole screen has to be a client
- * component even though `data` — everything else `resolveHome` needs — was
- * fetched server-side in page.tsx. `now` is read exactly once, here, so the
- * resolver stays a pure function of it rather than each render re-deriving
- * its own clock.
+ * `/` — the home screen (tickets 015 / 024).
+ *
+ * Everything except the draft was fetched server-side in one round trip
+ * (page.tsx). The draft lives in IndexedDB (ADR-0001) and can only be read in
+ * the browser, which is why this is a client component — but it no longer
+ * *blocks* on that read. It used to render the word "Loading…" until IndexedDB
+ * answered, which meant that after the route's skeleton you got a second,
+ * uglier loading state before any content at all.
+ *
+ * Now the server-derived answer renders immediately (resolved as though there
+ * were no draft), and the resume card replaces it a beat later if one turns
+ * out to exist. The one thing that must not race is starting a session: until
+ * the draft read lands we cannot know we would be clobbering one, so the Start
+ * button stays disabled for those few milliseconds.
+ *
+ * `now` is captured alongside each resolution rather than read at render time,
+ * so the resolver stays a pure function of it and a re-render can't invent a
+ * new clock (react-hooks/purity).
  */
 export function HomeScreen({ data }: { data: HomeData }) {
   const t = useTranslations("Home");
-  const [status, setStatus] = useState<Status>("loading");
-  const [state, setState] = useState<HomeState | null>(null);
-  const [minutesInProgress, setMinutesInProgress] = useState(0);
-  // Captured alongside `state` (rather than read again at render time) so
-  // the streak below is computed from the same clock reading the resolver
-  // used — a component render must stay pure (react-hooks/purity), and this
-  // is the one `now` a re-render is allowed to reuse.
-  const [resolvedAt, setResolvedAt] = useState<number | null>(null);
+  const router = useRouter();
+
+  const [draft, setDraft] = useState<SessionDraft | null>(null);
+  const [draftChecked, setDraftChecked] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [isStarting, startTransition] = useTransition();
+  const [startError, setStartError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-
-    async function resolve() {
-      const stored = (await idbGet(ACTIVE_DRAFT_KEY)) as
-        SessionDraft | undefined;
+    void (async () => {
+      const stored = (await idbGet(ACTIVE_DRAFT_KEY)) as SessionDraft | undefined;
       if (cancelled) return;
-
-      const now = Date.now();
-      const draft = stored ? { startedAt: stored.startedAt } : null;
-      const input = buildResolveHomeInput({
-        now,
-        draft,
-        activeProgramId: data.activeProgramId,
-        workouts: data.workouts,
-        completedSessions: data.recentSessions.map((s) => ({
-          workoutId: s.workoutId,
-          completedAt: s.completedAt,
-        })),
-      });
-
-      setState(resolveHome(input));
-      setResolvedAt(now);
-      setMinutesInProgress(
-        draft
-          ? Math.max(0, Math.round((now - Date.parse(draft.startedAt)) / 60000))
-          : 0,
-      );
-      setStatus("ready");
-    }
-
-    void resolve();
+      setDraft(stored ?? null);
+      setNow(Date.now());
+      setDraftChecked(true);
+    })();
     return () => {
       cancelled = true;
     };
-  }, [data]);
+  }, []);
 
-  async function discardDraft() {
-    await idbDel(ACTIVE_DRAFT_KEY);
-    const now = Date.now();
-    const input = buildResolveHomeInput({
+  const state: HomeState = resolveHome(
+    buildResolveHomeInput({
       now,
-      draft: null,
+      draft: draft ? { startedAt: draft.startedAt } : null,
       activeProgramId: data.activeProgramId,
       workouts: data.workouts,
       completedSessions: data.recentSessions.map((s) => ({
         workoutId: s.workoutId,
         completedAt: s.completedAt,
       })),
-    });
-    setState(resolveHome(input));
-    setResolvedAt(now);
+    }),
+  );
+
+  async function discardDraft() {
+    await idbDel(ACTIVE_DRAFT_KEY);
+    setDraft(null);
+    setNow(Date.now());
   }
 
-  if (status === "loading" || !state || resolvedAt === null) {
-    return (
-      <main className="mx-auto flex w-full max-w-[480px] flex-1 items-center justify-center px-4 py-12">
-        <p className="text-sm text-ink-muted">{t("loading")}</p>
-      </main>
-    );
+  /**
+   * Start a session straight from Home and go to the player.
+   *
+   * This is the whole point of ticket 024. Home used to link to the workout
+   * builder, so "Start workout" meant *look at the plan*, and starting was
+   * another screen and another tap away — on the button you press most, every
+   * training day.
+   *
+   * The round trip is real (bundle + last-performance, per ADR-0001), so the
+   * button owns a pending and an error state rather than pretending otherwise.
+   * On failure the user stays on Home with the plan still reachable.
+   */
+  function start(workoutId: string) {
+    setStartError(null);
+    startTransition(async () => {
+      try {
+        await startSession(createClient(), workoutId);
+        router.push("/session");
+      } catch {
+        setStartError(t("startError"));
+      }
+    });
   }
 
   const streak = calculateStreak(
     data.recentSessions.map((s) => s.completedAt),
-    resolvedAt,
+    now,
   );
   const lastThree = data.recentSessions.slice(0, 3);
   const showBelowTheFold = state.kind === "today" || state.kind === "rest";
@@ -127,7 +187,12 @@ export function HomeScreen({ data }: { data: HomeData }) {
           <CardHeader className="gap-1">
             <CardTitle>{t("resumeTitle")}</CardTitle>
             <CardDescription>
-              {t("resumeBody", { minutes: minutesInProgress })}
+              {t("resumeBody", {
+                minutes: Math.max(
+                  0,
+                  Math.round((now - Date.parse(state.startedAt)) / 60000),
+                ),
+              })}
             </CardDescription>
           </CardHeader>
           <div className="flex flex-wrap gap-2 px-(--card-spacing)">
@@ -157,16 +222,23 @@ export function HomeScreen({ data }: { data: HomeData }) {
                 <CardTitle>{t("todayTitle", { name: workout.name })}</CardTitle>
               </CardHeader>
               <div className="px-(--card-spacing)">
-                <Button asChild>
-                  <Link
-                    href={`/programs/${data.activeProgramId}/workouts/${workout.id}`}
-                  >
-                    {t("startWorkout")}
-                  </Link>
-                </Button>
+                <TodayActions
+                  workout={workout}
+                  planHref={`/programs/${data.activeProgramId}/workouts/${workout.id}`}
+                  // Until the draft read lands we cannot know whether starting
+                  // would clobber a session already in progress.
+                  canStart={draftChecked}
+                  isStarting={isStarting}
+                  onStart={() => start(workout.id)}
+                />
               </div>
             </Card>
           ))}
+          {startError && (
+            <p role="alert" className="text-danger text-sm">
+              {startError}
+            </p>
+          )}
         </div>
       )}
 

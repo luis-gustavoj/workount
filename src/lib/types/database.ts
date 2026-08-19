@@ -425,6 +425,18 @@ export type Database = {
           performed_at: string
         }[]
       }
+      // Everything the home screen needs, in one round trip (ticket 024,
+      // 0007_get_home_data.sql). Returns a single jsonb document rather than a
+      // row set: three differently-shaped results (a scalar, a workout list, a
+      // session list) do not flatten into one row-type without either three
+      // functions or a wide sparse table. `Json` here rather than the precise
+      // shape — the shape is validated at the boundary in lib/home/query.ts.
+      get_home_data: {
+        Args: {
+          p_recent_session_limit?: number
+        }
+        Returns: Json
+      }
       get_session_prs: {
         Args: {
           p_session_id: string
