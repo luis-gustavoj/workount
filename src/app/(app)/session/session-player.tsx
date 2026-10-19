@@ -24,6 +24,7 @@ import { requestRestNotificationPermission } from "@/lib/session/notify";
 import { workingSetCount } from "@/lib/session/player";
 import { createClient } from "@/lib/supabase/client";
 import { useSessionStore } from "@/lib/session/store";
+import { cn } from "@/lib/utils";
 import type {
   DraftExercise,
   LastPerformanceSet,
@@ -66,6 +67,57 @@ function formatLastTime(
   return reference
     ? t("lastTimeValue", { weight: reference.weight, reps: reference.reps })
     : null;
+}
+
+/**
+ * The whole last performance at a glance, under the exercise name (ticket
+ * 028) — so the load for set 1 can be chosen knowing how set 3 went. Tracks
+ * progress by working ordinal: the next set is `signal` (it is "the set you
+ * are on", DESIGN.md), logged ones settle to faint. Additive to the per-row
+ * reference, never a replacement. Renders nothing with no history; the rows
+ * already say "First time".
+ */
+function LastPerformanceChips({
+  lastPerformance,
+  nextOrdinal,
+}: {
+  lastPerformance: LastPerformanceSet[];
+  nextOrdinal: number;
+}) {
+  const t = useTranslations("Session");
+  if (lastPerformance.length === 0) return null;
+
+  return (
+    <ul
+      aria-label={t("lastTimeLabel")}
+      className="flex flex-wrap justify-center gap-1.5"
+    >
+      {lastPerformance.map((set, index) => {
+        const ordinal = index + 1;
+        const state =
+          ordinal < nextOrdinal
+            ? "done"
+            : ordinal === nextOrdinal
+              ? "next"
+              : "upcoming";
+        return (
+          <li
+            key={set.setNumber}
+            data-state={state}
+            aria-current={state === "next" ? "step" : undefined}
+            className={cn(
+              "rounded-[4px] border border-line px-2 py-0.5 font-mono text-sm tabular-nums",
+              state === "done" && "text-ink-faint",
+              state === "next" && "text-signal",
+              state === "upcoming" && "text-ink-muted",
+            )}
+          >
+            {t("lastTimeValue", { weight: set.weight, reps: set.reps })}
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 /**
@@ -541,6 +593,10 @@ export function SessionPlayer() {
             <span className="font-mono text-sm text-ink-muted tabular-nums">
               {formatTarget(t, exercise)}
             </span>
+            <LastPerformanceChips
+              lastPerformance={exercise.lastPerformance}
+              nextOrdinal={nextOrdinal}
+            />
           </div>
           <button
             type="button"

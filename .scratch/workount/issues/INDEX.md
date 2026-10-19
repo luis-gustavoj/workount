@@ -72,6 +72,9 @@ Work **blockers-first**. Any ticket whose blockers are all `done` can be picked 
 | 024 | [Bottom tab bar, start-from-home, and perceived speed](024-navigation-and-perceived-speed.md) | 015, 019, 022 | Polish |
 | 025 | [Landing page; home moves to `/home`](025-landing-page.md) | 022, 024 | Public |
 | 026 | [Starter programs](026-starter-programs.md) | 006, 025 | Public |
+| 027 | [Last performance is scoped to the workout, not the program](027-last-performance-per-workout.md) | 010, 011 | Polish |
+| 028 | [Last performance at a glance: chips under the exercise name](028-last-performance-chips.md) | 023, 027 | Polish |
+| 029 | [The session player ignores `profiles.weight_unit`](029-player-weight-unit.md) | — | Polish |
 
 ## Two checkpoints worth stopping at
 

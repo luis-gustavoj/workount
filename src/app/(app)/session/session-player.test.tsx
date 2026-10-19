@@ -131,7 +131,74 @@ describe("SessionPlayer", () => {
     renderPlayer();
 
     expect(await screen.findByText("Last time")).toBeInTheDocument();
-    expect(screen.getByText("80 × 8")).toBeInTheDocument();
+    // Once in the upcoming row, once in the header chips (ticket 028).
+    expect(screen.getAllByText("80 × 8")).toHaveLength(2);
+  });
+
+  describe("Last-performance chips (ticket 028)", () => {
+    const threeSets = [
+      { setNumber: 1, weight: 80, reps: 8 },
+      { setNumber: 2, weight: 80, reps: 8 },
+      { setNumber: 3, weight: 77.5, reps: 7 },
+    ];
+
+    function chips() {
+      return within(screen.getByRole("list", { name: "Last time" })).getAllByRole("listitem");
+    }
+
+    it("shows every set of the last performance up front, in order", async () => {
+      idbStore.set(
+        ACTIVE_DRAFT_KEY,
+        draft({ exercises: [exercise({ targetSets: 3, lastPerformance: threeSets })] }),
+      );
+      renderPlayer();
+      await screen.findByText("Barbell Bench Press");
+
+      expect(chips().map((c) => c.textContent)).toEqual(["80 × 8", "80 × 8", "77.5 × 7"]);
+    });
+
+    it("renders no chip list for an exercise with no last performance", async () => {
+      idbStore.set(ACTIVE_DRAFT_KEY, draft());
+      renderPlayer();
+      await screen.findByText("Barbell Bench Press");
+
+      expect(screen.queryByRole("list", { name: "Last time" })).not.toBeInTheDocument();
+    });
+
+    it("renders every set even when last time had more sets than today's target", async () => {
+      idbStore.set(
+        ACTIVE_DRAFT_KEY,
+        draft({ exercises: [exercise({ targetSets: 2, lastPerformance: threeSets })] }),
+      );
+      renderPlayer();
+      await screen.findByText("Barbell Bench Press");
+
+      expect(chips()).toHaveLength(3);
+    });
+
+    it("marks the next working set current, advancing on a working set but not on a warmup", async () => {
+      const user = userEvent.setup();
+      idbStore.set(
+        ACTIVE_DRAFT_KEY,
+        draft({ exercises: [exercise({ targetSets: 3, lastPerformance: threeSets })] }),
+      );
+      renderPlayer();
+      await screen.findByText("Barbell Bench Press");
+
+      expect(chips().map((c) => c.getAttribute("aria-current"))).toEqual(["step", null, null]);
+
+      await user.click(screen.getByRole("button", { name: "Warmup" }));
+      await user.click(screen.getByRole("button", { name: "Log set" }));
+      await waitFor(() => expect(screen.getByRole("button", { name: "Unmark warmup" })).toBeInTheDocument());
+      expect(chips().map((c) => c.getAttribute("aria-current"))).toEqual(["step", null, null]);
+
+      await waitFor(() => expect(screen.getByRole("button", { name: "Log set" })).toBeEnabled());
+      await user.click(screen.getByRole("button", { name: "Log set" }));
+      await waitFor(() =>
+        expect(chips().map((c) => c.getAttribute("aria-current"))).toEqual([null, "step", null]),
+      );
+      expect(chips().map((c) => c.dataset.state)).toEqual(["done", "next", "upcoming"]);
+    });
   });
 
   it("logs a set and writes through to IndexedDB immediately", async () => {
