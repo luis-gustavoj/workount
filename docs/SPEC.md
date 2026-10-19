@@ -131,9 +131,11 @@ Never "add it later"; later means shipping a table that leaks.
 
 ## 3. Database functions
 
-### `get_last_performance(p_program_id uuid, p_exercise_ids uuid[]) → setof …`
+### `get_last_performance(p_workout_id uuid) → setof …`
 
-For each supplied exercise, return the performed sets (`set_number`, `weight`, `reps`) from **the most recent `completed` session in that program** that included it. Working sets only.
+For each exercise currently in the workout, return the performed sets (`set_number`, `weight`, `reps`) from **the most recent `completed` session of that workout** that included it. Working sets only. An exercise never performed in this workout returns nothing — there is no fallback to other workouts of the program, because the same lift is often prescribed differently on different days (heavy bench on Push A, light on Push B) and the other day's numbers would mislead.
+
+It takes no exercise list: keyed on the workout, it reads the workout's exercises itself, so the session-start fetch can run it in parallel with the prescription instead of after it.
 
 Powers the *"Last time: 80×8, 80×8, 77.5×7"* reference. It is **fetched once at session start** and cached in the bundle — never called mid-session, because mid-session there is no network ([ADR-0001](adr/0001-offline-first-session-player.md)).
 

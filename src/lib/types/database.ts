@@ -414,8 +414,7 @@ export type Database = {
       }
       get_last_performance: {
         Args: {
-          p_program_id: string
-          p_exercise_ids: string[]
+          p_workout_id: string
         }
         Returns: {
           exercise_id: string

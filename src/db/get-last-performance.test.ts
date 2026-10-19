@@ -3,8 +3,9 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-// Structural guard for supabase/migrations/0003_get_last_performance.sql
-// (ticket 010). There is no local Postgres in this test environment — the
+// Structural guard for the live get_last_performance definition —
+// supabase/migrations/0008_get_last_performance_per_workout.sql (ticket 027,
+// superseding 0003 from ticket 010). There is no local Postgres in this test environment — the
 // behavioral proof (seed sessions across several weeks, assert each exercise's
 // reference comes from its own most recent performance, warmups excluded,
 // cross-user isolation) lives in scripts/test-last-performance.ts, run
@@ -18,7 +19,7 @@ const migration = readFileSync(
     process.cwd(),
     "supabase",
     "migrations",
-    "0003_get_last_performance.sql",
+    "0008_get_last_performance_per_workout.sql",
   ),
   "utf8",
 );
@@ -30,13 +31,14 @@ const migration = readFileSync(
 const sql = migration.replace(/--[^\n]*/g, "");
 const lower = sql.toLowerCase();
 
-describe("0003_get_last_performance.sql — get_last_performance RPC", () => {
+describe("0008_get_last_performance_per_workout.sql — get_last_performance RPC", () => {
   it("defines the function in the public schema with the spec'd params", () => {
     expect(lower).toMatch(
       /create\s+(or\s+replace\s+)?function\s+public\.get_last_performance\s*\(/,
     );
-    expect(lower).toMatch(/p_program_id\s+uuid/);
-    expect(lower).toMatch(/p_exercise_ids\s+uuid\s*\[\s*\]/);
+    expect(lower).toMatch(/p_workout_id\s+uuid/);
+    expect(lower).not.toMatch(/p_program_id/);
+    expect(lower).not.toMatch(/p_exercise_ids/);
   });
 
   it("returns the columns docs/SPEC.md §3 promises, correctly typed", () => {
@@ -55,7 +57,7 @@ describe("0003_get_last_performance.sql — get_last_performance RPC", () => {
 
   it("runs as SECURITY INVOKER, not DEFINER (RLS must still gate every row)", () => {
     // The ticket is explicit: "A user must not be able to read another
-    // user's history by passing their program id." SECURITY DEFINER would
+    // user's history by passing their workout id." SECURITY DEFINER would
     // run as the function owner and bypass the sessions/session_sets RLS
     // policies that are the only thing enforcing that boundary here.
     expect(lower).toMatch(/security\s+invoker/);
@@ -81,10 +83,22 @@ describe("0003_get_last_performance.sql — get_last_performance RPC", () => {
     expect(orderClause).toMatch(/completed_at\s+desc/);
   });
 
-  it("scopes to the given program and only completed sessions", () => {
-    // ADR-0004: analytics (and this reference) are scoped to a program.
-    expect(lower).toMatch(/program_id\s*=\s*p_program_id/);
+  it("drops the old program-scoped signature it supersedes", () => {
+    expect(lower).toMatch(
+      /drop\s+function\s+if\s+exists\s+public\.get_last_performance\s*\(\s*uuid\s*,\s*uuid\s*\[\s*\]\s*\)/,
+    );
+  });
+
+  it("scopes to sessions of the given workout and only completed ones", () => {
+    // Ticket 027: the same lift is prescribed differently on different days,
+    // so the reference comes from THIS workout — no fallback to others.
+    expect(lower).toMatch(/s\.workout_id\s*=\s*p_workout_id/);
     expect(lower).toMatch(/status\s*=\s*'completed'/);
+  });
+
+  it("limits exercises to those currently in the workout", () => {
+    expect(lower).toMatch(/from\s+public\.workout_exercises\s+we/);
+    expect(lower).toMatch(/we\.workout_id\s*=\s*p_workout_id/);
   });
 
   it("excludes warmup sets both when picking the session and when returning sets", () => {

@@ -130,18 +130,20 @@ describe("startSession", () => {
     expect(idbSet).toHaveBeenCalledWith(ACTIVE_DRAFT_KEY, draft);
   });
 
-  it("passes the resolved program id and exercise ids to get_last_performance", async () => {
-    const supabase = fakeSupabase({
-      workoutExerciseRows: [
-        workoutExerciseRow({ id: "we-1", exercise_id: "ex-1" }),
-        workoutExerciseRow({ id: "we-2", exercise_id: "ex-2" }),
-      ],
-    });
+  it("scopes get_last_performance to the workout being started (ticket 027)", async () => {
+    const supabase = fakeSupabase();
     await startSession(supabase, WORKOUT_ID);
     expect(supabase.rpc).toHaveBeenCalledWith("get_last_performance", {
-      p_program_id: "prog-1",
-      p_exercise_ids: ["ex-1", "ex-2"],
+      p_workout_id: WORKOUT_ID,
     });
+  });
+
+  it("fails the start when get_last_performance errors, rather than starting with no reference", async () => {
+    const supabase = fakeSupabase();
+    supabase.rpc.mockResolvedValueOnce({ data: null, error: new Error("boom") });
+    vi.mocked(idbSet).mockClear();
+    await expect(startSession(supabase, WORKOUT_ID)).rejects.toThrow("boom");
+    expect(idbSet).not.toHaveBeenCalled();
   });
 
   it("gives an exercise never performed an empty last-performance and does not crash", async () => {
@@ -153,10 +155,9 @@ describe("startSession", () => {
     expect(draft.exercises[0].lastPerformance).toEqual([]);
   });
 
-  it("skips the get_last_performance round trip for a workout with no exercises", async () => {
+  it("builds an empty draft for a workout with no exercises", async () => {
     const supabase = fakeSupabase({ workoutExerciseRows: [] });
     const draft = await startSession(supabase, WORKOUT_ID);
-    expect(supabase.rpc).not.toHaveBeenCalled();
     expect(draft.exercises).toEqual([]);
   });
 

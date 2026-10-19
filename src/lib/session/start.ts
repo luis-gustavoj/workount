@@ -36,35 +36,27 @@ export async function startSession(
   // RLS-scoped to the caller, no user.id needed to query it) — batching it
   // alongside the bundle fetch keeps this the "one round trip" ADR-0001
   // promises instead of a blocking auth call ahead of it.
-  const [userResult, workoutResult, prescriptions, profileResult] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase.from("workouts").select("program_id").eq("id", workoutId).single(),
-    listWorkoutExercises(supabase, workoutId),
-    supabase.from("profiles").select("default_rest_seconds").single(),
-  ]);
+  // get_last_performance is keyed on the workout alone (ticket 027) — it
+  // reads the workout's exercises itself, so it doesn't wait on the
+  // prescription and joins this batch instead of following it.
+  const [userResult, workoutResult, prescriptions, profileResult, lastPerformanceResult] =
+    await Promise.all([
+      supabase.auth.getUser(),
+      supabase.from("workouts").select("program_id").eq("id", workoutId).single(),
+      listWorkoutExercises(supabase, workoutId),
+      supabase.from("profiles").select("default_rest_seconds").single(),
+      supabase.rpc("get_last_performance", { p_workout_id: workoutId }),
+    ]);
 
   const user = userResult.data.user;
   if (!user) throw new Error("Not authenticated");
   if (workoutResult.error) throw workoutResult.error;
   if (profileResult.error) throw profileResult.error;
+  if (lastPerformanceResult.error) throw lastPerformanceResult.error;
 
   const programId = workoutResult.data.program_id;
   const defaultRestSeconds = profileResult.data.default_rest_seconds;
-
-  // No point round-tripping for an empty exercise list — an empty workout is
-  // a real (if unusual) state, not an error.
-  const exerciseIds = prescriptions.map((p) => p.exerciseId);
-  const lastPerformanceRows =
-    exerciseIds.length === 0
-      ? []
-      : await (async () => {
-          const { data, error } = await supabase.rpc("get_last_performance", {
-            p_program_id: programId,
-            p_exercise_ids: exerciseIds,
-          });
-          if (error) throw error;
-          return data ?? [];
-        })();
+  const lastPerformanceRows = lastPerformanceResult.data ?? [];
 
   const draft = buildSessionDraft({
     sessionId,
