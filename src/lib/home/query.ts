@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import type { Database } from "@/lib/types/database";
 
+import { WORKOUT_KINDS } from "@/lib/validation/workout";
+
 import type { HomeWorkout } from "./resolve";
 
 export type HomeSessionSummary = {
@@ -40,6 +42,7 @@ const homeDataSchema = z.object({
       id: z.uuid(),
       name: z.string(),
       dayOfWeek: z.number().int().min(0).max(6).nullable(),
+      kind: z.enum(WORKOUT_KINDS),
       exerciseCount: z.number().int().nonnegative(),
     }),
   ),

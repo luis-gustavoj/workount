@@ -29,6 +29,10 @@ function summaryRow(overrides: Record<string, unknown> = {}) {
     duration_seconds: 3120,
     total_volume: 4200,
     set_count: 18,
+    kind: "strength",
+    distance_m: null,
+    rpe: null,
+    notes: null,
     ...overrides,
   };
 }

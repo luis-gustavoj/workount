@@ -74,10 +74,26 @@ export default async function HistoryDetailPage({
         </h1>
         <p className="text-sm text-ink-muted">{absoluteDate}</p>
         <p className="text-sm text-ink-muted">
-          {minutes !== null && t("durationValue", { minutes })}
-          {minutes !== null && " · "}
-          {t("volumeValue", { volume: roundVolume(detail.totalVolumeKg) })}
+          {[
+            minutes !== null && t("durationValue", { minutes }),
+            ...(detail.kind === "cardio"
+              ? [
+                  detail.distanceMeters !== null &&
+                    t("distanceValue", { km: detail.distanceMeters / 1000 }),
+                  detail.rpe !== null && t("rpeValue", { rpe: detail.rpe }),
+                ]
+              : [
+                  t("volumeValue", {
+                    volume: roundVolume(detail.totalVolumeKg),
+                  }),
+                ]),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
+        {detail.notes && (
+          <p className="text-sm whitespace-pre-wrap">{detail.notes}</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">

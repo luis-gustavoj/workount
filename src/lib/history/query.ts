@@ -16,6 +16,10 @@ export type HistorySessionSummary = {
   durationSeconds: number | null;
   totalVolumeKg: number;
   setCount: number;
+  // ADR-0008: a cardio session has no sets and no volume; it has these instead.
+  kind: "strength" | "cardio";
+  distanceMeters: number | null;
+  rpe: number | null;
 };
 
 // 150-ish sessions in a year (ticket 016's own estimate) — 20 keeps a page
@@ -34,7 +38,7 @@ export async function getHistoryList(
   const { data, error } = await supabase
     .from("v_session_summary")
     .select(
-      "session_id, workout_name, completed_at, duration_seconds, total_volume, set_count",
+      "session_id, workout_name, completed_at, duration_seconds, total_volume, set_count, kind, distance_m, rpe",
     )
     .eq("status", "completed")
     .order("completed_at", { ascending: false })
@@ -55,6 +59,9 @@ export async function getHistoryList(
       durationSeconds: row.duration_seconds,
       totalVolumeKg: row.total_volume,
       setCount: row.set_count,
+      kind: row.kind === "cardio" ? "cardio" : "strength",
+      distanceMeters: row.distance_m,
+      rpe: row.rpe,
     })),
   };
 }
@@ -79,6 +86,11 @@ export type HistorySessionDetail = {
   completedAt: string;
   durationSeconds: number | null;
   totalVolumeKg: number;
+  // ADR-0008: a cardio session has no sets and no volume; it has these instead.
+  kind: "strength" | "cardio";
+  distanceMeters: number | null;
+  rpe: number | null;
+  notes: string | null;
   sets: HistorySetDetail[];
 };
 
@@ -98,7 +110,7 @@ export async function getSessionDetail(
     supabase
       .from("v_session_summary")
       .select(
-        "session_id, workout_name, completed_at, duration_seconds, total_volume",
+        "session_id, workout_name, completed_at, duration_seconds, total_volume, kind, distance_m, rpe, notes",
       )
       .eq("session_id", sessionId)
       .maybeSingle(),
@@ -130,6 +142,10 @@ export async function getSessionDetail(
     completedAt: summary.completed_at as string,
     durationSeconds: summary.duration_seconds,
     totalVolumeKg: summary.total_volume,
+    kind: summary.kind === "cardio" ? "cardio" : "strength",
+    distanceMeters: summary.distance_m,
+    rpe: summary.rpe,
+    notes: summary.notes,
     sets: (setsResult.data ?? []).map((row) => ({
       id: row.id,
       exerciseId: row.exercise_id,

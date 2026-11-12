@@ -100,12 +100,26 @@ export default async function HistoryPage({
                       </div>
                       <CardDescription>
                         {minutes !== null && t("durationValue", { minutes })}
-                        {minutes !== null && " · "}
-                        {t("volumeValue", {
-                          volume: roundVolume(session.totalVolumeKg),
-                        })}
-                        {" · "}
-                        {t("setsValue", { count: session.setCount })}
+                        {session.kind === "cardio" ? (
+                          <>
+                            {minutes !== null &&
+                              session.distanceMeters !== null &&
+                              " · "}
+                            {session.distanceMeters !== null &&
+                              t("distanceValue", {
+                                km: session.distanceMeters / 1000,
+                              })}
+                          </>
+                        ) : (
+                          <>
+                            {minutes !== null && " · "}
+                            {t("volumeValue", {
+                              volume: roundVolume(session.totalVolumeKg),
+                            })}
+                            {" · "}
+                            {t("setsValue", { count: session.setCount })}
+                          </>
+                        )}
                       </CardDescription>
                     </CardHeader>
                   </Card>

@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 export const WORKOUT_NAME_MAX = 80;
+export const WORKOUT_NOTES_MAX = 4000;
+
+// workouts.kind (migration 0009). Fixed at creation — see ADR-0008.
+export const WORKOUT_KINDS = ["strength", "cardio"] as const;
+export type WorkoutKind = (typeof WORKOUT_KINDS)[number];
 
 // Index-matched to day_of_week (0=Sun..6=Sat, migration 0001) and to the
 // translation keys in messages/*.json — the single source both the program
@@ -45,10 +50,18 @@ export const dayOfWeekSchema = z.preprocess(
     .nullable(),
 );
 
+// Blank → null, so clearing the textarea clears the column.
+export const workoutNotesSchema = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() !== "" ? value.trim() : null),
+  z.string().max(WORKOUT_NOTES_MAX).nullable(),
+);
+
 export const createWorkoutSchema = z.object({
   programId: z.uuid(),
   name: workoutNameSchema,
   dayOfWeek: dayOfWeekSchema,
+  // A form without the field (older clients) creates a strength workout.
+  kind: z.preprocess((value) => value ?? "strength", z.enum(WORKOUT_KINDS)),
 });
 
 export const updateWorkoutSchema = z.object({
@@ -56,6 +69,7 @@ export const updateWorkoutSchema = z.object({
   programId: z.uuid(),
   name: workoutNameSchema,
   dayOfWeek: dayOfWeekSchema,
+  notes: workoutNotesSchema,
 });
 
 export const deleteWorkoutSchema = z.object({

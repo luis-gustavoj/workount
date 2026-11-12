@@ -66,6 +66,8 @@ workouts                          -- a DAY within a program. A plan, not a perfo
   name          text NOT NULL              -- "Push A"
   day_of_week   smallint NULL              -- 0=Sun … 6=Sat. NULL = unscheduled.
   position      int NOT NULL
+  kind          text NOT NULL DEFAULT 'strength'  -- 'strength' | 'cardio' (ADR-0008). Fixed at creation.
+  notes         text                       -- workout-level note; a cardio workout's whole prescription
   created_at    timestamptz NOT NULL DEFAULT now()
   CHECK (day_of_week BETWEEN 0 AND 6)
 
@@ -92,6 +94,9 @@ sessions                          -- the PERFORMANCE
   completed_at      timestamptz NULL
   duration_seconds  int NULL
   notes             text
+  kind              text NOT NULL DEFAULT 'strength'  -- SNAPSHOT of workouts.kind (ADR-0002, ADR-0008)
+  distance_m        int NULL         -- cardio only. ALWAYS meters.
+  rpe               numeric(3,1) NULL CHECK (rpe BETWEEN 1 AND 10)  -- cardio only, session-level effort
 
 session_sets                      -- one performed set. Self-describing — see ADR-0002.
   id                   uuid PK

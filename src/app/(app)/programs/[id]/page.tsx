@@ -176,6 +176,20 @@ export default async function ProgramDetailPage({
                 ))}
               </select>
             </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="workout-kind" className="text-sm font-medium">
+                {t("workoutKind")}
+              </label>
+              <select
+                id="workout-kind"
+                name="kind"
+                defaultValue="strength"
+                className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+              >
+                <option value="strength">{t("kindStrength")}</option>
+                <option value="cardio">{t("kindCardio")}</option>
+              </select>
+            </div>
             <Button type="submit" className="self-start">
               {t("addWorkout")}
             </Button>

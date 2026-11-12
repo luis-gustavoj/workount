@@ -202,10 +202,13 @@ export type Database = {
       sessions: {
         Row: {
           completed_at: string | null
+          distance_m: number | null
           duration_seconds: number | null
           id: string
+          kind: string
           notes: string | null
           program_id: string
+          rpe: number | null
           started_at: string
           status: string
           user_id: string
@@ -213,10 +216,13 @@ export type Database = {
         }
         Insert: {
           completed_at?: string | null
+          distance_m?: number | null
           duration_seconds?: number | null
           id: string
+          kind?: string
           notes?: string | null
           program_id: string
+          rpe?: number | null
           started_at: string
           status: string
           user_id: string
@@ -224,10 +230,13 @@ export type Database = {
         }
         Update: {
           completed_at?: string | null
+          distance_m?: number | null
           duration_seconds?: number | null
           id?: string
+          kind?: string
           notes?: string | null
           program_id?: string
+          rpe?: number | null
           started_at?: string
           status?: string
           user_id?: string
@@ -312,7 +321,9 @@ export type Database = {
           created_at: string
           day_of_week: number | null
           id: string
+          kind: string
           name: string
+          notes: string | null
           position: number
           program_id: string
         }
@@ -320,7 +331,9 @@ export type Database = {
           created_at?: string
           day_of_week?: number | null
           id?: string
+          kind?: string
           name: string
+          notes?: string | null
           position: number
           program_id: string
         }
@@ -328,7 +341,9 @@ export type Database = {
           created_at?: string
           day_of_week?: number | null
           id?: string
+          kind?: string
           name?: string
+          notes?: string | null
           position?: number
           program_id?: string
         }
@@ -358,6 +373,10 @@ export type Database = {
           total_volume: number
           set_count: number
           exercise_count: number
+          kind: string
+          distance_m: number | null
+          rpe: number | null
+          notes: string | null
         }
         Relationships: [
           {

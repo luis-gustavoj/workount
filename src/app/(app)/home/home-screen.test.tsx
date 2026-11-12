@@ -36,7 +36,7 @@ function homeData(overrides: Partial<HomeData> = {}): HomeData {
   return {
     activeProgramId: PROGRAM_ID,
     workouts: [
-      { id: WORKOUT_ID, name: "Push A", dayOfWeek: 4, exerciseCount: 5 },
+      { id: WORKOUT_ID, name: "Push A", dayOfWeek: 4, kind: "strength", exerciseCount: 5 },
     ],
     recentSessions: [],
     ...overrides,
@@ -126,7 +126,7 @@ describe("HomeScreen — starting a workout", () => {
     renderHome(
       homeData({
         workouts: [
-          { id: WORKOUT_ID, name: "Push A", dayOfWeek: 4, exerciseCount: 0 },
+          { id: WORKOUT_ID, name: "Push A", dayOfWeek: 4, kind: "strength", exerciseCount: 0 },
         ],
       }),
     );
@@ -137,6 +137,24 @@ describe("HomeScreen — starting a workout", () => {
     expect(
       screen.queryByRole("button", { name: "Start workout" }),
     ).not.toBeInTheDocument();
+  });
+
+  // ADR-0008: a cardio workout has no exercises by design — it is logged, not
+  // started, and must not be mistaken for an empty strength workout.
+  it("offers Log cardio for a cardio workout", async () => {
+    renderHome(
+      homeData({
+        workouts: [
+          { id: WORKOUT_ID, name: "Run", dayOfWeek: 4, kind: "cardio", exerciseCount: 0 },
+        ],
+      }),
+    );
+
+    expect(await screen.findByRole("link", { name: "Log cardio" })).toHaveAttribute(
+      "href",
+      `/programs/${PROGRAM_ID}/workouts/${WORKOUT_ID}#log`,
+    );
+    expect(screen.queryByRole("link", { name: "Add exercises" })).not.toBeInTheDocument();
   });
 });
 
