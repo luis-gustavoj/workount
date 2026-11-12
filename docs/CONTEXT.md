@@ -32,7 +32,7 @@ You *perform a session* **from** a *workout*. A workout is a noun you edit; a se
 
 **Active program** — the **one** program the user is currently following (`profiles.active_program_id`). Exactly one, never zero-or-many. It's what the home screen reads to decide what to recommend today. Other programs still exist and keep their history; they're just not being followed.
 
-**Workout** — see above. A day within a program. Has a name ("Push A"), an optional **day of week** (0–6; `NULL` means "unscheduled — do it whenever"), and an ordered list of prescribed exercises.
+**Workout** — see above. A day within a program. Has a name ("Push A"), an optional **day of week** (0–6; `NULL` means "unscheduled — do it whenever"), a note, and either an ordered list of prescribed exercises (a **strength** workout) or a written prescription (a **cardio** workout — see **Cardio**). Which of the two it is never changes.
 
 **Prescription** — what the program *tells you to do*: this exercise, this many sets, this rep range, this rest, these notes. Lives on `workout_exercises`. Contrast with **performance**.
 
@@ -48,6 +48,8 @@ You *perform a session* **from** a *workout*. A workout is a noun you edit; a se
 **Working set** — a performed set that counts. **Warmup set** — a performed set that does *not* count: excluded from volume and ineligible for PRs. Bench-pressing the empty bar for 10 is not a personal record, and if warmups counted, week one of any program would report fake PRs and a wildly inflated volume curve.
 
 **Superset** — two or more exercises in a workout sharing a `superset_group` (`'A'`, `'B'`…), performed alternately: a set of A1, a set of A2, rest, repeat.
+
+**Cardio** — continuous training measured in **time and distance**, not sets × reps × weight: a run, a ride, a long walk. One word for every modality; *which* modality (treadmill at 1% incline, road run, bike) is part of the prescription's text, not a category in the domain. A cardio performance has no sets, so it has no volume, no e1RM and no PRs — those measures are strength-only. Incline walking done inside a strength day is *not* cardio in this sense; it's a note on that workout. A cardio session is **logged** after the fact (duration, distance, effort), not played live. See [ADR-0008](adr/0008-cardio-is-a-kind-of-workout.md).
 
 ---
 

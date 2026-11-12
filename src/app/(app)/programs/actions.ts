@@ -174,10 +174,11 @@ export async function archiveProgram(formData: FormData) {
  * throws the same friendly "Program not found" the other actions use.
  */
 export async function createWorkout(formData: FormData) {
-  const { programId, name, dayOfWeek } = createWorkoutSchema.parse({
+  const { programId, name, dayOfWeek, kind } = createWorkoutSchema.parse({
     programId: formData.get("programId"),
     name: formData.get("name"),
     dayOfWeek: formData.get("dayOfWeek"),
+    kind: formData.get("kind"),
   });
 
   const { supabase } = await requireUser();
@@ -205,26 +206,28 @@ export async function createWorkout(formData: FormData) {
     name,
     day_of_week: dayOfWeek,
     position,
+    kind,
   });
   if (error) throw error;
 
   revalidatePath(`/programs/${programId}`);
 }
 
-/** Rename a workout, or change its day of week (including to/from unscheduled). */
+/** Rename a workout, change its day of week (including to/from unscheduled), or edit its notes. */
 export async function updateWorkout(formData: FormData) {
-  const { id, programId, name, dayOfWeek } = updateWorkoutSchema.parse({
+  const { id, programId, name, dayOfWeek, notes } = updateWorkoutSchema.parse({
     id: formData.get("id"),
     programId: formData.get("programId"),
     name: formData.get("name"),
     dayOfWeek: formData.get("dayOfWeek"),
+    notes: formData.get("notes"),
   });
 
   const { supabase } = await requireUser();
 
   const { data: updated, error } = await supabase
     .from("workouts")
-    .update({ name, day_of_week: dayOfWeek })
+    .update({ name, day_of_week: dayOfWeek, notes })
     .eq("id", id)
     .eq("program_id", programId)
     .select("id")

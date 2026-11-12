@@ -33,6 +33,9 @@ export type HomeWorkout = {
   // must offer "Add exercises" instead of a Start that drops the user into an
   // empty player claiming no session is in progress.
   exerciseCount: number;
+  // ADR-0008: a cardio workout has no exercises by design; Home offers
+  // "Log cardio" for it instead of Start / "Add exercises".
+  kind: "strength" | "cardio";
 };
 
 export type HomeDraft = {

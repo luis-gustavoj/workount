@@ -161,7 +161,20 @@
     "wednesday": "Wednesday",
     "thursday": "Thursday",
     "friday": "Friday",
-    "saturday": "Saturday"
+    "saturday": "Saturday",
+    "workoutKind": "Type",
+    "kindStrength": "Strength",
+    "kindCardio": "Cardio",
+    "workoutNotes": "Notes",
+    "workoutNotesHint": "For cardio, the whole prescription: what to do, week by week.",
+    "prescription": "Prescription",
+    "prescriptionEmpty": "No prescription yet. Add it under Edit.",
+    "logCardioTitle": "Log cardio",
+    "durationMinutes": "Duration (min)",
+    "distanceKm": "Distance (km)",
+    "rpe": "Effort (RPE 1–10)",
+    "sessionNotes": "Notes",
+    "logCardioSubmit": "Save session"
   },
   "ExercisePicker": {
     "trigger": "Add exercise",
@@ -255,7 +268,8 @@
     "streakLabel": "Streak",
     "streakValue": "{days, plural, =0 {No streak yet} one {# day} other {# days}}",
     "deletedWorkout": "Deleted workout",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "logCardio": "Log cardio"
   },
   "WorkoutDetail": {
     "startSession": "Start session",
@@ -332,7 +346,10 @@
     "prBadge": "PR",
     "prBadgeLabel": "New personal record",
     "targetRange": "Prescribed {repMin}–{repMax}",
-    "setWeightReps": "{weight} kg × {reps}"
+    "setWeightReps": "{weight} kg × {reps}",
+    "distanceValue": "{km} km",
+    "rpeValue": "RPE {rpe}",
+    "cardio": "Cardio"
   },
   "Analytics": {
     "title": "Analytics",

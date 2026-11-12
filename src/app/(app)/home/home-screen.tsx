@@ -8,7 +8,11 @@ import { useTranslations } from "next-intl";
 
 import { buildResolveHomeInput } from "@/lib/home/build-input";
 import type { HomeData } from "@/lib/home/query";
-import { resolveHome, type HomeState, type HomeWorkout } from "@/lib/home/resolve";
+import {
+  resolveHome,
+  type HomeState,
+  type HomeWorkout,
+} from "@/lib/home/resolve";
 import { calculateStreak } from "@/lib/home/streak";
 import { startSession } from "@/lib/session/start";
 import { ACTIVE_DRAFT_KEY, type SessionDraft } from "@/lib/session/types";
@@ -45,13 +49,23 @@ function TodayActions({
 }) {
   const t = useTranslations("Home");
 
+  // Cardio is logged after the fact on the workout page (ADR-0008) — there is
+  // no player to start.
+  if (workout.kind === "cardio") {
+    return (
+      <Button asChild className="self-start">
+        <Link href={`${planHref}#log`}>{t("logCardio")}</Link>
+      </Button>
+    );
+  }
+
   // A workout with no exercises has nothing to start. Starting it anyway would
   // land the user in a player whose empty state reads "No session in progress"
   // — a confusing lie moments after they started one.
   if (workout.exerciseCount === 0) {
     return (
       <div className="flex flex-col gap-2">
-        <p className="text-ink-muted text-sm">{t("noExercises")}</p>
+        <p className="text-sm text-ink-muted">{t("noExercises")}</p>
         <Button asChild className="self-start">
           <Link href={planHref}>{t("addExercises")}</Link>
         </Button>
@@ -61,12 +75,16 @@ function TodayActions({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button type="button" disabled={!canStart || isStarting} onClick={onStart}>
+      <Button
+        type="button"
+        disabled={!canStart || isStarting}
+        onClick={onStart}
+      >
         {isStarting ? t("starting") : t("startWorkout")}
       </Button>
       <Link
         href={planHref}
-        className="text-ink-muted rounded-md text-sm underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="rounded-md text-sm text-ink-muted underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         {t("viewPlan")}
       </Link>
@@ -107,7 +125,8 @@ export function HomeScreen({ data }: { data: HomeData }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const stored = (await idbGet(ACTIVE_DRAFT_KEY)) as SessionDraft | undefined;
+      const stored = (await idbGet(ACTIVE_DRAFT_KEY)) as
+        SessionDraft | undefined;
       if (cancelled) return;
       setDraft(stored ?? null);
       setNow(Date.now());
@@ -235,7 +254,7 @@ export function HomeScreen({ data }: { data: HomeData }) {
             </Card>
           ))}
           {startError && (
-            <p role="alert" className="text-danger text-sm">
+            <p role="alert" className="text-sm text-danger">
               {startError}
             </p>
           )}

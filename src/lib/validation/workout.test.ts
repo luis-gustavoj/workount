@@ -12,13 +12,18 @@ const programId = "11111111-1111-4111-8111-111111111111";
 const workoutId = "22222222-2222-4222-8222-222222222222";
 
 describe("createWorkoutSchema", () => {
+  it("accepts a cardio kind and rejects an unknown one", () => {
+    expect(createWorkoutSchema.parse({ programId, name: "Run", kind: "cardio" }).kind).toBe("cardio");
+    expect(() => createWorkoutSchema.parse({ programId, name: "Run", kind: "swim" })).toThrow();
+  });
+
   it("accepts a name with a day of week", () => {
     const parsed = createWorkoutSchema.parse({
       programId,
       name: "Push A",
       dayOfWeek: 1,
     });
-    expect(parsed).toEqual({ programId, name: "Push A", dayOfWeek: 1 });
+    expect(parsed).toEqual({ programId, name: "Push A", dayOfWeek: 1, kind: "strength" });
   });
 
   it("accepts a null day of week (unscheduled)", () => {
@@ -123,7 +128,14 @@ describe("updateWorkoutSchema", () => {
       programId,
       name: "Renamed",
       dayOfWeek: 2,
+      notes: null,
     });
+  });
+
+  it("trims notes and collapses blank notes to null", () => {
+    const base = { id: workoutId, programId, name: "Run", dayOfWeek: 2 };
+    expect(updateWorkoutSchema.parse({ ...base, notes: "  5×(4'+1')  " }).notes).toBe("5×(4'+1')");
+    expect(updateWorkoutSchema.parse({ ...base, notes: "   " }).notes).toBeNull();
   });
 
   it("rejects a non-uuid id", () => {
